@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.caption.mapper.UserPaperMapper">
+
+    <resultMap id="BaseResultMap" type="cn.sparke.support.modules.v1.caption.bean.po.TbUserPaper">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="group_id" jdbcType="VARCHAR" property="groupId"/>
+        <result column="section_code" jdbcType="VARCHAR" property="sectionCode"/>
+        <result column="user_id" jdbcType="VARCHAR" property="userId"/>
+    </resultMap>
+
+
+    <resultMap id="PaperDetails" type="cn.sparke.support.modules.v1.caption.bean.vo.PaperDetails" >
+        <id  column="paperId" property="id"/>
+        <result column="paperName" property="name" />
+        <association property="captionListening" javaType="cn.sparke.support.modules.v1.caption.bean.vo.PaperCaptionListening">
+            <result column="audioUrl" property="audioUrl" />
+            <result  column="subtitleUrl" property="subtitleUrl"/>
+            <result  column="audioSize" property="audioSize"/>
+            <result  column="subtitleSize" property="subtitleSize"/>
+        </association>
+        <association property="video" javaType="cn.sparke.support.modules.v1.caption.bean.vo.PaperVideo">
+            <result column="videoName" property="name" />
+            <result column="ccId" property="ccId" />
+        </association>
+    </resultMap>
+
+    <select id="getPaperDetails" resultMap="PaperDetails">
+        SELECT
+            tp.id AS paperId,
+            tp.name AS paperName,
+            tpcl.audio_url AS audioUrl,
+            tpcl.audio_size AS audioSize,
+            tpcl.subtitle_size AS subtitleSize,
+            tpcl.subtitle_url AS subtitleUrl,
+            tpclv.name AS videoName,
+            tpclv.cc_id AS ccId
+        FROM tb_paper_group tpg
+            INNER JOIN tb_paper_group_relation tpgr  ON tpg.id = tpgr.group_id AND tpgr.del_flag = 0
+            INNER JOIN tb_paper tp ON tp.id = tpgr.paper_id AND tp.del_flag = 0
+        LEFT JOIN tb_paper_caption_listening tpcl on tp.id = tpcl.paper_id
+        LEFT JOIN tb_paper_caption_listening_video tpclv ON tp.id = tpclv.paper_id
+        WHERE tpg.id = #{groupId} and tpg.del_flag = 0
+        order by tpg.sort,tpgr.sort,tp.sort
+    </select>
+
+    <select id="findByUserIdAndPaperAndSectionCode" resultMap="BaseResultMap">
+        SELECT *
+        FROM tb_user_paper
+        WHERE user_id = #{userId} AND section_code = #{sectionCode}
+    </select>
+
+    <select id="getPaperInfoByUserId" resultType="cn.sparke.support.modules.v1.caption.bean.vo.PaperUserInfo">
+        SELECT
+            tpg.id   AS paperId,
+            tpg.name AS paperName,
+            tpg.img  AS paperImg
+        FROM tb_user_paper tup
+            INNER JOIN tb_paper_group tpg ON tup.group_id = tpg.id
+        WHERE tup.user_id = #{userId} AND tup.section_code = #{sectionCode}
+    </select>
+
+
+    <insert id="insert" parameterType="cn.sparke.support.modules.v1.caption.bean.po.TbUserPaper">
+        INSERT INTO tb_user_paper (id, group_id, section_code, user_id)
+        VALUES (#{id,jdbcType=VARCHAR}, #{groupId,jdbcType=VARCHAR}, #{sectionCode,jdbcType=VARCHAR},
+                #{userId,jdbcType=VARCHAR})
+    </insert>
+
+    <update id="updateByPrimaryKeySelective" parameterType="cn.sparke.support.modules.v1.caption.bean.po.TbUserPaper">
+        update tb_user_paper
+        <set>
+            <if test="groupId != null">
+                group_id = #{groupId,jdbcType=VARCHAR},
+            </if>
+            <if test="sectionCode != null">
+                section_code = #{sectionCode,jdbcType=VARCHAR},
+            </if>
+            <if test="userId != null">
+                user_id = #{userId,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=VARCHAR}
+    </update>
+</mapper>

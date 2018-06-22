@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.favorities.mapper.FavoriteMapper">
+    <insert id="insert">
+        INSERT INTO tb_user_favorite (id, user_id, type, target_id, create_date) VALUES
+            (
+                #{id},
+                #{userId},
+                #{type},
+                #{targetId},
+                #{createDate}
+            )
+    </insert>
+    <select id="existFavorite" resultType="string">
+        SELECT id
+        FROM tb_user_favorite
+        WHERE target_id = #{targetId}
+              AND user_id = #{userId}
+        LIMIT 1
+    </select>
+    <!--取消收藏-->
+    <delete id="cancelFavorite">
+        DELETE FROM tb_user_favorite
+        WHERE user_id = #{userId}
+        AND target_id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item.targetId}
+        </foreach>
+    </delete>
+    <!--我收藏的资讯列表-->
+    <select id="findListByNews" resultType="cn.sparke.user.modules.v1.favorities.bean.FavoriteNewsBean">
+        SELECT
+            cn.id,
+            cn.title,
+            cn.comment_num,
+            cn.list_img,
+            cn.create_date
+        FROM tb_user_favorite uf
+            INNER JOIN tb_community_news cn
+                ON uf.type = 1 AND uf.target_id = cn.id
+        WHERE cn.del_flag = 0
+              AND uf.user_id = #{userId}
+              AND cn.is_show = 1
+        <![CDATA[
+              AND cn.publish_time < now()
+        ]]>
+    </select>
+    <!--我收藏的图书列表-->
+    <select id="findListByBook" resultType="cn.sparke.user.modules.v1.favorities.bean.FavoriteBookBean">
+        SELECT
+            pb.id,
+            pb.product_id,
+            p.name,
+            p.brief,
+            p.sale_num,
+            p.list_img,
+            p.evaluate_star,
+            p.create_date
+        FROM tb_user_favorite uf
+            INNER JOIN tb_product_book pb
+                ON uf.type = 2 AND uf.target_id = pb.id
+            INNER JOIN tb_product p
+                ON pb.product_id = p.id
+        WHERE p.del_flag = 0
+              AND uf.user_id = #{userId}
+              AND p.is_show = 1
+    </select>
+
+</mapper>

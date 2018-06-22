@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.coupons.mapper.CouponCodeMapper">
+    <select id="getByCode" resultType="cn.sparke.user.modules.v1.coupons.bean.CouponCodeBean">
+        SELECT *
+        FROM tb_coupon_code
+        WHERE del_flag = 0
+              AND code = #{code}
+    </select>
+    <update id="updateCodeUsedNum">
+        UPDATE tb_coupon_code
+        SET used_num = used_num + 1
+        WHERE id = #{id}
+    </update>
+</mapper>

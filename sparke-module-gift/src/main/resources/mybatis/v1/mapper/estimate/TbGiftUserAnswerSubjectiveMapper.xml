@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sparke.gift.modules.v1.estimate.mapper.TbGiftUserAnswerSubjectiveMapper">
+    <insert id="insertList">
+        insert into tb_gift_user_answer_subjective (id,answer_id, rule_id, rule_detail_id,
+        score, create_date, create_by,
+        update_date, update_by, remarks,
+        sort, del_flag)
+        <foreach collection="tbGiftUserAnswerSubjectiveList" item="tbGiftUserAnswerSubjective" open="values ("
+                 separator="),(" close=")">
+            #{tbGiftUserAnswerSubjective.id,jdbcType=VARCHAR},
+            #{tbGiftUserAnswerSubjective.answerId,jdbcType=VARCHAR},
+            #{tbGiftUserAnswerSubjective.ruleId,jdbcType=VARCHAR},
+            #{tbGiftUserAnswerSubjective.ruleDetailId,jdbcType=VARCHAR},
+            #{tbGiftUserAnswerSubjective.score,jdbcType=INTEGER},
+            #{tbGiftUserAnswerSubjective.createDate,jdbcType=TIMESTAMP},
+            #{tbGiftUserAnswerSubjective.createBy,jdbcType=VARCHAR},
+            #{tbGiftUserAnswerSubjective.updateDate,jdbcType=TIMESTAMP},
+            #{tbGiftUserAnswerSubjective.updateBy,jdbcType=VARCHAR},
+            #{tbGiftUserAnswerSubjective.remarks,jdbcType=VARCHAR},
+            #{tbGiftUserAnswerSubjective.sort,jdbcType=INTEGER}, #{tbGiftUserAnswerSubjective.delFlag,jdbcType=TINYINT}
+        </foreach>
+    </insert>
+</mapper>

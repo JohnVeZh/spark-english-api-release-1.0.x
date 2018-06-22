@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.easy.modules.v1.captionlistenings.mapper.CaptionListeningMapper">
+
+    <select id="queryList" resultType="cn.sparke.easy.modules.v1.captionlistenings.bean.CaptionListeningBean">
+        SELECT
+            tp.id AS paperId,
+            tp.`name`,
+            tpcl.audio_url,
+            tpcl.subtitle_url
+        FROM
+          tb_qr_paper_caption_listening tqpcl
+        LEFT JOIN tb_paper_caption_listening tpcl ON tpcl.id = tqpcl.caption_listening_id
+        LEFT JOIN tb_paper tp ON tp.id = tpcl.paper_id
+        WHERE
+          tqpcl.del_flag = 0
+        ORDER BY
+            tqpcl.sort ASC,
+            tqpcl.create_date DESC
+    </select>
+
+</mapper>

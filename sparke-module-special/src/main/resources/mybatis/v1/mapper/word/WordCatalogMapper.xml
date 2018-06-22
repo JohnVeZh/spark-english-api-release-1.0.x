@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.word.mapper.WordCatalogMapper">
+    <!--<select id="findTwoCatalogList" resultMap="catalogMap">-->
+        <!--SELECT-->
+          <!--id,-->
+          <!--name,-->
+          <!--code,-->
+          <!--(SELECT count(1) FROM tb_word words-->
+              <!--INNER JOIN tb_word_catalog catalog-->
+                  <!--ON words.catalog_id = catalog.id-->
+          <!--where catalog.parent_id = catalogs.id-->
+                <!--and  catalog.section_code = #{sectionCode}-->
+                <!--and catalog.del_flag = 0 AND words.del_flag = 0)-->
+              <!--as total_num,-->
+          <!--icon_url,-->
+          <!--#{userId} AS userId,-->
+          <!--#{sectionCode} as sectionCode-->
+          <!--FROM  tb_word_catalog catalogs WHERE parent_id = #{parentCatalogId} and level=2 AND del_flag = 0-->
+          <!--ORDER BY sort-->
+    <!--</select>-->
+    <select id="findTwoCatalogList" resultMap="catalogMap">
+        SELECT
+        id,
+        name,
+        code,
+        total_num,
+        icon_url,
+        #{userId} AS userId,
+        #{sectionCode} as sectionCode
+        FROM  tb_word_catalog catalogs WHERE parent_id = #{parentCatalogId} and level=2 AND del_flag = 0
+        ORDER BY sort
+    </select>
+    <select id="findThreeCatalogList" resultType="cn.sparke.special.modules.v1.word.bean.WordCatalogBean">
+        SELECT
+        tb_word_catalog.id,
+        tb_word_catalog.name,
+        tb_word_catalog.parent_ids,
+        tb_word_user_report.right_rate
+        FROM  tb_word_catalog
+        LEFT JOIN tb_word_user_report
+        ON tb_word_catalog.id=tb_word_user_report.catalog_id
+        and tb_word_catalog.del_flag = 0
+        and tb_word_user_report.del_flag = 0
+        and tb_word_user_report.user_id = #{userId}
+        WHERE tb_word_catalog.parent_id = #{parentCatalogId} and level = 3
+        ORDER BY tb_word_catalog.sort
+    </select>
+
+    <resultMap id="catalogMap" type="cn.sparke.special.modules.v1.word.bean.WordCatalogBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="code" column="code"/>
+        <result property="totalNum" column="total_num"/>
+        <association property="didNum" column="{catalogId=id,userId=userId,sectionCode=sectionCode}"
+                     javaType="int" select="getWordDidNum"/>
+    </resultMap>
+    <select id="getWordDidNum" resultType="int">
+        SELECT ifnull(SUM(total_num),0)
+        FROM tb_word_user_report
+        WHERE  MATCH (parent_catalog_ids) AGAINST (#{catalogId} IN NATURAL LANGUAGE MODE)
+        and del_flag = 0 and user_id = #{userId} AND section_code = #{sectionCode}
+    </select>
+</mapper>

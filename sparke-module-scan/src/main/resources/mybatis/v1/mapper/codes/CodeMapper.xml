@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.scan.modules.v1.codes.mapper.CodeMapper">
+
+    <select id="queryByQrCode" resultType="cn.sparke.scan.modules.v1.codes.bean.CodeBean">
+        SELECT
+            type,
+            section_code AS sectionCode
+        FROM
+        tb_qr_code
+        WHERE
+        del_flag = 0
+        AND
+        code = #{qrCode}
+    </select>
+
+    <select id="queryPaperCatalogByCode" resultType="cn.sparke.scan.modules.v1.codes.bean.easy.PaperCatalogeBean">
+        SELECT
+        id
+        FROM
+        tb_paper_catalog tpc
+        WHERE
+        tpc.qr_code = #{qrCode}
+        AND section_code=#{sectionCode}
+        AND tpc.type=3
+        AND tpc.del_flag=0
+    </select>
+
+    <select id="queryFragmentByCode" resultType="cn.sparke.scan.modules.v1.codes.bean.easy.FragmentationBean">
+        SELECT
+            hear_url,
+            `name`
+        FROM
+            tb_qr_fragmentation
+        WHERE
+            qr_code = #{qrCode}
+        AND
+            type=1
+        AND del_flag=0
+    </select>
+
+    <select id="queryNetworkVideoByCode" resultType="cn.sparke.scan.modules.v1.codes.bean.easy.NetworkVideoBean">
+        SELECT
+            catalog.id AS catalogId,
+            video.section_code AS sectionCode
+        FROM
+            tb_qr_catalog catalog,
+            tb_qr_network_video video
+        WHERE
+            catalog.id = video.catalog_id
+            AND video.del_flag = 0
+            AND catalog.del_flag = 0
+            AND catalog.qr_code = #{qrCode}
+
+    </select>
+
+    <select id="queryWritingByCode" resultType="cn.sparke.scan.modules.v1.codes.bean.easy.FragmentationBean">
+       SELECT
+            id,
+            `name`,
+            hear_url
+        FROM
+            tb_qr_fragmentation tqf
+        WHERE
+            find_in_set(#{qrCode},qr_code)
+        AND section_code = #{sectionCode}
+        AND tqf.type=2
+        AND del_flag=0
+        ORDER BY tqf.sort ASC ,tqf.create_date DESC
+    </select>
+
+    <select id="queryCaptionListeningByCode" resultType="cn.sparke.scan.modules.v1.codes.bean.easy.CaptionListeningBean">
+
+        SELECT
+            tp.id AS paperId,
+            tp.`name`,
+            tpcl.audio_url,
+            tpcl.subtitle_url
+        FROM
+            tb_qr_paper_caption_listening tqpcl
+            LEFT JOIN tb_paper_caption_listening tpcl ON tpcl.id = tqpcl.caption_listening_id
+            LEFT JOIN tb_paper tp ON tp.id = tpcl.paper_id
+        WHERE
+            tqpcl.del_flag = 0
+            AND tqpcl.qr_code = #{qrCode}
+
+    </select>
+
+
+    <select id="queryWritingTranslationByCode" resultType="cn.sparke.scan.modules.v1.codes.bean.easy.StudyMaterialsWritingBean">
+        SELECT
+            type
+        FROM
+            tb_qr_code_study_materials_writing
+        WHERE
+            qr_code = #{qrCode}
+    </select>
+
+    <resultMap id="FullByQrCode" type="cn.sparke.scan.modules.v1.codes.bean.TbQrCode">
+        <id column="id" property="id"/>
+        <result column="use_scene" property="useScene"/>
+        <result column="code" property="code"/>
+        <result column="section_code" property="sectionCode"/>
+        <result column="type" property="type"/>
+        <result column="target_type" property="targetType"/>
+        <result column="create_date" property="createDate"/>
+
+        <result column="create_by" property="createBy"/>
+        <result column="update_date" property="updateDate"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="remarks" property="remarks"/>
+        <result column="sort" property="sort"/>
+        <result column="del_flag" property="delFlag"/>
+    </resultMap>
+    <select id="queryFullByQrCode" resultMap="FullByQrCode">
+        SELECT
+            tqc.*
+        FROM
+            tb_qr_code tqc
+        WHERE
+            tqc.code = #{qrCode} and tqc.del_flag = 0
+    </select>
+
+
+    <select id="queryGiftVideoByQrCode" resultType="cn.sparke.scan.modules.v1.codes.bean.gift.GiftVideo">
+        SELECT
+            tgv.title,
+            tgv.detail,
+            tgv.ccid
+
+        FROM
+            tb_gift_video tgv
+        WHERE
+            tgv.qr_code =#{qrCode}
+        AND tgv.del_flag = 0
+        ORDER BY tgv.sort,tgv.create_date
+    </select>
+
+    <select id="giftIsActivated" resultType="Integer">
+        SELECT
+            COUNT(1)
+        FROM tb_gift_activation_code tg
+        WHERE
+            tg.del_flag=0
+        AND tg.is_activated=1
+        AND tg.section_code=#{sectionCode}
+        AND tg.activate_user_id=#{userId}
+    </select>
+
+
+</mapper>

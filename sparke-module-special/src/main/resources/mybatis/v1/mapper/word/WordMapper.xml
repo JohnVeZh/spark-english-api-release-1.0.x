@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.word.mapper.WordMapper">
+    <resultMap id="infoMap" type="cn.sparke.special.modules.v1.word.bean.WordBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="phonetic" column="phonetic"/>
+        <result property="pronunciationUrl" column="pronunciation_url"/>
+        <result property="paraphrase" column="paraphrase"/>
+        <result property="sentence" column="sentence"/>
+        <result property="reference" column="reference"/>
+        <result property="referenceAudioUrl" column="reference_audio_url"/>
+        <collection property="options" ofType="cn.sparke.special.modules.v1.word.bean.WordQuestionOptionBean">
+            <id property="id" column="optionId"/>
+            <result property="prefix" column="prefix"/>
+            <result property="content" column="content"/>
+            <result property="isAnswer" column="is_answer"/>
+        </collection>
+    </resultMap>
+    <select id="findList" resultMap="infoMap">
+        SELECT
+        word.id,
+        word.name,
+        word.phonetic,
+        word.pronunciation_url,
+        word.paraphrase,
+        word.sentence,
+        word.reference,
+        word.reference_audio_url,
+        options.id as optionId,
+        options.prefix,
+        options.content,
+        options.is_answer
+        FROM tb_word word
+        INNER JOIN tb_word_question question ON word.id = question.word_id AND question.del_flag = 0
+        INNER JOIN tb_word_question_option options ON question.id = options.question_id AND options.del_flag = 0
+        WHERE word.catalog_id = #{catalogId} AND word.del_flag = 0 ORDER BY word.sort, question.sort,options.sort
+    </select>
+    <select id="hasReport" resultType="java.lang.Integer">
+        SELECT COUNT(1)  FROM tb_word_user_report WHERE user_id = #{userId} AND catalog_id=#{catalogId} AND del_flag = 0;
+    </select>
+    <delete id="delete" >
+        DELETE FROM tb_word_user_report  WHERE catalog_id = #{catalogId} AND user_id=#{userId};
+    </delete>
+
+    <insert id="insertReport">
+         INSERT INTO tb_word_user_report
+        (
+        id,
+        section_code,
+        user_id,
+        catalog_id,
+        parent_catalog_ids,
+        total_num,
+        right_num,
+        wrong_num,
+        right_rate,
+        create_date,
+        create_by,
+        update_date,
+        update_by,
+        remarks,
+        sort
+        )
+        VALUES(
+        #{id},
+        #{sectionCode},
+        #{userId},
+        #{catalogId},
+        #{parentCatalogIds},
+        #{totalNum},
+        #{rightNum},
+        #{wrongNum},
+        #{rightRate},
+        #{createDate},
+        #{createBy.id},
+        #{updateDate},
+        #{updateBy.id},
+        #{remarks},
+        #{sort}
+        )
+    </insert>
+
+    <select id="findWrongList" resultMap="infoMap">
+        SELECT
+        word.id,
+        word.name,
+        word.phonetic,
+        word.pronunciation_url,
+        word.paraphrase,
+        word.sentence,
+        word.reference,
+        word.reference_audio_url,
+        options.id as optionId,
+        options.prefix,
+        options.content,
+        options.is_answer
+        FROM tb_word word
+        INNER JOIN tb_word_question question ON word.id = question.word_id AND question.del_flag = 0
+        INNER JOIN tb_word_question_option options ON question.id = options.question_id AND options.del_flag = 0
+        INNER JOIN tb_word_wrong_book wrong ON wrong.word_id = word.id
+        AND wrong.del_flag = 0 AND wrong.user_id=#{userId} AND wrong.section_code = #{sectionCode}
+        WHERE word.del_flag = 0 ORDER BY wrong.create_date DESC,options.sort
+    </select>
+    <insert id="insertWrongBook" >
+        INSERT INTO tb_word_wrong_book
+            (
+            id,
+            section_code,
+            user_id,
+            word_id,
+            create_date,
+            update_date,
+            del_flag
+            )
+            VALUES(
+            #{id},
+            #{sectionCode},
+            #{userId},
+            #{wordId},
+            #{createDate},
+            #{updateDate},
+            #{delFlag}
+            )
+    </insert>
+    <delete id="deleteWrongBook">
+        DELETE FROM tb_word_wrong_book WHERE word_id = #{wordId} AND user_id=#{userId}
+    </delete>
+    <select id="getExistWrongBook" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM tb_word_wrong_book WHERE word_id = #{wordId} AND user_id=#{userId}
+    </select>
+    <select id="getWrongWordCount" resultType="int">
+        SELECT COUNT(1) FROM tb_word_wrong_book book INNER JOIN tb_word word ON book.word_id = word.id WHERE book.user_id = #{userId} AND book.section_code = #{sectionCode} AND word.del_flag = 0 AND book.del_flag = 0
+    </select>
+
+    <!--<select id="getWordTotal" resultType="int">-->
+        <!--SELECT count(1) FROM tb_word_catalog catalog-->
+        <!--INNER JOIN tb_word word ON word.catalog_id = catalog.id-->
+        <!--WHERE catalog.level = 3-->
+        <!--AND section_code = #{sectionCode} AND type = 2-->
+        <!--AND catalog.del_flag = 0-->
+        <!--AND word.del_flag = 0-->
+    <!--</select>-->
+    <select id="getWordTotal" resultType="int">
+        SELECT ifnull(total_num,0) FROM tb_word_catalog
+        WHERE level = 1
+        AND section_code = #{sectionCode} AND type = 2
+        AND del_flag = 0 LIMIT 1
+    </select>
+    <!--获取做过总数与做对总数-->
+    <select id="getDidAndRightWordTotal" resultType="cn.sparke.special.modules.v1.report.bean.NumBean">
+        SELECT ifnull(SUM(total_num),0) AS didTotal,ifnull(SUM(right_num),0) AS rightTotal FROM tb_word_user_report WHERE user_id = #{userId} AND section_code = #{sectionCode} AND del_flag = 0
+    </select>
+</mapper>

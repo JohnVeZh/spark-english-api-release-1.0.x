@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.gift.modules.v1.estimate.mapper.EstimateReportMapper">
+
+    <resultMap id="reportResultMap" type="cn.sparke.gift.modules.v1.estimate.bean.vo.EstimateReport">
+        <result property="isSkip" column="isSkip" jdbcType="TINYINT"></result>
+        <result property="teacherEvaluateStatus" column="teacherEvaluateStatus" jdbcType="TINYINT"></result>
+        <result property="totalScore" column="totalScore" jdbcType="INTEGER"></result>
+        <result property="scoreListen" column="scoreListen" jdbcType="INTEGER"></result>
+        <result property="listenSuggestion" column="listenSuggestion" jdbcType="VARCHAR"></result>
+        <result property="scoreRead" column="scoreRead" jdbcType="INTEGER"></result>
+        <result property="readSuggestion" column="readSuggestion" jdbcType="VARCHAR"></result>
+        <result property="scoreTranslate" column="scoreTranslate" jdbcType="INTEGER"></result>
+        <result property="translateSuggestion" column="translateSuggestion" jdbcType="VARCHAR"></result>
+        <result property="scoreWrite" column="scoreWrite" jdbcType="INTEGER"></result>
+        <result property="writeSuggestion" column="writeSuggestion" jdbcType="VARCHAR"></result>
+        <result property="listenTotalCount" column="listenTotalCount" jdbcType="INTEGER"></result>
+        <result property="listenRightCount" column="listenRightCount" jdbcType="INTEGER"></result>
+        <result property="readTotalCount" column="readTotalCount" jdbcType="INTEGER"></result>
+        <result property="readRightCount" column="readRightCount" jdbcType="INTEGER"></result>
+        <result property="translateReplyContent" column="translateReplyContent" jdbcType="VARCHAR"></result>
+        <result property="translateAnswerId" column="translateAnswerId" jdbcType="VARCHAR"></result>
+        <result property="translateSubmit" column="translateSubmit" jdbcType="INTEGER"></result>
+        <result property="writeReplyContent" column="writeReplyContent" jdbcType="VARCHAR"></result>
+        <result property="writeAnswerId" column="writeAnswerId" jdbcType="VARCHAR"></result>
+        <result property="writeSubmit" column="writeSubmit" jdbcType="INTEGER"></result>
+        <collection property="titles" ofType="cn.sparke.gift.modules.v1.estimate.bean.vo.Title"  column="{sectionCode=sectionCode}" javaType="ArrayList" select="queryTitles" >
+           <result column="scoreStart" property="scoreStart" />
+            <result column="scoreEnd" property="scoreEnd" />
+            <result column="title" property="title" />
+        </collection>
+    </resultMap>
+    
+    <select id="queryTitles" resultType="cn.sparke.gift.modules.v1.estimate.bean.vo.Title">
+        SELECT
+            config.score_start AS scoreStart,
+            config.score_end   AS scoreEnd,
+            config.title       AS title
+        FROM tb_gift_report_name_config config
+        WHERE config.del_flag = 0 AND config.section_code = #{sectionCode,jdbcType=TINYINT}
+        ORDER BY config.sort ASC, config.score_start ASC
+    </select>
+
+    <select id="querySuggest" resultType="cn.sparke.gift.modules.v1.estimate.bean.po.TbGiftReportSuggestConfig">
+        SELECT
+          suggest.content AS content,
+          suggest.start_score AS startScore,
+          suggest.end_score AS endScore,
+          suggest.question_type AS questionType
+        FROM tb_gift_report_suggest_config suggest
+        where  suggest.del_flag=0  AND suggest.section_code=#{sectionCode,jdbcType=TINYINT}
+        ORDER BY suggest.sort
+    </select>
+
+    <select id="queryReport" resultMap="reportResultMap">
+        SELECT
+        #{sectionCode} AS sectionCode,
+            report.is_skip                                                          AS isSkip,
+            report.teacher_evaluate_status                                          AS teacherEvaluateStatus,
+            report.total_score                                                      AS totalScore,
+            report.score_listen                                                     AS scoreListen,
+            (SELECT content
+              FROM tb_gift_report_suggest_config listen_config
+             WHERE report.score_listen BETWEEN listen_config.start_score AND listen_config.end_score AND
+                    listen_config.del_flag = 0 AND listen_config.question_type = 1 AND
+                    listen_config.section_code = #{sectionCode,jdbcType=TINYINT})    AS listenSuggestion,
+            report.score_read                                                       AS scoreRead,
+            (SELECT content
+             FROM tb_gift_report_suggest_config read_config
+             WHERE report.score_read BETWEEN read_config.start_score AND read_config.end_score AND
+                   read_config.del_flag = 0 AND read_config.question_type = 2 AND
+                   read_config.section_code = #{sectionCode,jdbcType=TINYINT})      AS readSuggestion,
+            report.score_translate                                                  AS scoreTranslate,
+            (SELECT content
+            FROM tb_gift_report_suggest_config translate_config
+            WHERE report.score_translate BETWEEN translate_config.start_score AND translate_config.end_score AND
+                  translate_config.del_flag = 0 AND translate_config.question_type = 3 AND
+                  translate_config.section_code = #{sectionCode,jdbcType=TINYINT}) AS translateSuggestion,
+            report.score_write                                                      AS scoreWrite,
+            (SELECT content
+               FROM tb_gift_report_suggest_config write_config
+               WHERE report.score_write BETWEEN write_config.start_score AND write_config.end_score AND
+                     write_config.del_flag = 0 AND write_config.question_type = 4 AND
+                     write_config.section_code = #{sectionCode,jdbcType=TINYINT})     AS writeSuggestion,
+            report.listen_total_count                                               AS listenTotalCount,
+            report.listen_right_count                                               AS listenRightCount,
+            report.read_total_count                                                 AS readTotalCount,
+            report.read_right_count                                                 AS readRightCount,
+            translate_answer.reply_content                                          AS translateReplyContent,
+            translate_answer.id                                                     AS translateAnswerId,
+            (CASE WHEN translate_answer.id IS NULL
+                THEN 0
+             ELSE 1 END)                                                            AS translateSubmit,
+            write_answer.reply_content                                              AS writeReplyContent,
+            write_answer.id                                                         AS writeAnswerId,
+            (CASE WHEN write_answer.id IS NULL
+                THEN 0
+             ELSE 1 END)                                                            AS writeSubmit
+        FROM (SELECT *
+              FROM tb_gift_report
+              WHERE id = #{reportId,jdbcType=VARCHAR}) report
+            LEFT JOIN tb_gift_user_answer translate_answer
+                ON report.id = translate_answer.report_id AND translate_answer.del_flag = 0 AND
+                   translate_answer.question_type = 3
+            LEFT JOIN tb_gift_user_answer write_answer
+                ON report.id = write_answer.report_id AND write_answer.del_flag = 0 AND write_answer.question_type = 4
+    </select>
+
+    <select id="queryUserEstimate" resultType="cn.sparke.gift.modules.v1.estimate.bean.vo.UserEstimate">
+        SELECT
+            rule.name      AS name,
+            sub.score      AS score,
+            detail.content AS content
+        FROM tb_gift_user_answer_subjective sub
+            LEFT JOIN tb_gift_subjective_rule rule
+                ON sub.rule_id = rule.id
+            LEFT JOIN tb_gift_subjective_rule_detail detail
+                ON sub.rule_detail_id = detail.id
+        WHERE sub.answer_id = #{answerId,jdbcType=VARCHAR}
+        ORDER BY sub.sort
+    </select>
+</mapper>

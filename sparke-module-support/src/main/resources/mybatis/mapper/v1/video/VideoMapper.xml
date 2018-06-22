@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.video.mapper.IVideoMapper">
+
+    <select id="findFamousTeacherBySectionCode" resultType="cn.sparke.support.modules.v1.video.bean.vo.TeacherVideos">
+        SELECT
+            tpnc.id,
+            tp.cover_img AS coverImg,
+            tp.name
+            FROM tb_product_network_course tpnc
+        INNER JOIN tb_product tp  ON tp.id = tpnc.product_id AND tp.type = 1 and tp.del_flag = 0
+            WHERE tp.section_code = #{sectionCode}  AND tpnc.is_famous_teacher = 1 and tp.is_show = 1
+        order by tp.sort
+    </select>
+</mapper>

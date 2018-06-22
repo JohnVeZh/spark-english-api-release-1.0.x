@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.exam.mapper.report.TbPaperStructureMapper">
+    <resultMap id="BaseResultMap" type="cn.sparke.support.modules.v1.exam.bean.submit.po.TbPaperStructure">
+        <id column="id" jdbcType="VARCHAR" property="id" />
+        <result column="paper_id" jdbcType="VARCHAR" property="paperId" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="alias" jdbcType="VARCHAR" property="alias" />
+        <result column="parent_id" jdbcType="VARCHAR" property="parentId" />
+        <result column="parent_ids" jdbcType="VARCHAR" property="parentIds" />
+        <result column="level" jdbcType="INTEGER" property="level" />
+        <result column="is_leaf" jdbcType="BIT" property="isLeaf" />
+        <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+        <result column="create_by" jdbcType="VARCHAR" property="createBy" />
+        <result column="update_date" jdbcType="TIMESTAMP" property="updateDate" />
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+        <result column="remarks" jdbcType="VARCHAR" property="remarks" />
+        <result column="sort" jdbcType="INTEGER" property="sort" />
+        <result column="del_flag" jdbcType="TINYINT" property="delFlag" />
+    </resultMap>
+    <sql id="Base_Column_List">
+        id, paper_id, name, alias, parent_id,parent_ids, level, is_leaf, create_date, create_by, update_date,
+        update_by, remarks, sort, del_flag
+    </sql>
+    <select id="getById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from tb_paper_structure
+        where id = #{id,jdbcType=VARCHAR}
+    </select>
+    <select id="findByIdList" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from tb_paper_structure
+        where
+        <foreach collection="structureIdlist" item="structureId" open=" id in ( " separator="," close=" ) ">
+            #{structureId}
+        </foreach>
+    </select>
+    <select id="findLeafChilBypId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from tb_paper_structure
+        where is_leaf = 1 AND parent_ids LIKE CONCAT(CONCAT('%', #{structureId}), '%') and del_flag = 0
+        order by sort
+    </select>
+    <select id="findByPid" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from tb_paper_structure
+        WHERE del_flag = 0 AND parent_id = #{structureId}
+        order by sort
+    </select>
+</mapper>

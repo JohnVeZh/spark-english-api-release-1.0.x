@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.question.mapper.QuestionItemMapper">
+    <select id="getItem"  resultType="cn.sparke.special.modules.v1.question.bean.QuestionItemBean">
+        SELECT
+        question_item.id as id,
+        question_item.question_id as questionId,
+        question_item.content as content,
+        question_item.analysis as analysis,
+        question_item.create_date as createDate,
+        question_item.update_date as updateDate,
+        question_item.remarks as remarks,
+        question_item.sort as sort
+        FROM
+        tb_question_item question_item
+        where question_item.del_flag=0
+        and id= #{id}
+    </select>
+</mapper>

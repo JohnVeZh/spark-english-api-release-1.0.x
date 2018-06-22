@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="cn.sparke.goods.modules.v1.product.mapper.ProductMapper">
+
+    <select id="getProductNetworkCourseById" resultType="cn.sparke.goods.modules.v1.product.bean.ProductBean">
+        SELECT
+        tpnc.id,
+        tp.id as productId,
+        tp.name,
+        tp.brief,
+        tp.content,
+        tp.cover_img as coverImg,
+        tp.content_imgs as contentImgs,
+        tp.original_price as originalPrice,
+        tp.present_price as presentPrice,
+        tp.sale_num as saleNum,
+        tpnc.course_type as courseType,
+        tpnc.comment_num as commentNum,
+        tp.is_send as isSend,
+        tp.is_postage as isPostage,
+        tp.is_promotion as isPromotion,
+        tp.postage,
+        tpnc.catalog_number as catalogNumber,
+        tpnc.teacher_names as teacherNames,
+        tpnc.is_live as isLive,
+        tpnc.is_free as isFree,
+        tpnc.is_limit_free as isLimitFree,
+        tpnc.is_famous_teacher as isFamousTeacher,
+        tpnc.has_catalog as hasCatalog,
+        tpnc.status,
+        tpnc.limit_number as limitNumber,
+        tp.create_date as createDate,
+        tpnc.start_time as startTime,
+        tpnc.end_time as endTime,
+        tpnc.reserve_start_time as reserveStartTime,
+        tpnc.reserve_number as reserveNumber,
+        tpnc.receive_number as receiveNumber,
+        tpnc.sale_start_time as saleStartTime,
+        tpnc.sale_end_time as saleEndTime,
+        tpnc.shelf_on_time as shelfOnTime,
+        tpnc.shelf_off_time as shelfOffTime,
+        tpnc.limit_start_time as limitStartTime,
+        tpnc.limit_end_time as limitEndTime,
+        tpnc.qq_group_no as qqGroupNo,
+        tpnc.preview_cc_id as previewCcId,
+        tpnc.live_room_id as liveRoomId
+        FROM
+        tb_product_network_course AS tpnc
+        LEFT join tb_product as tp on tp.id = tpnc.product_id AND tp.type = 1 AND tp.del_flag = 0 AND tp.is_show = 1
+        WHERE tp.del_flag = 0 and tp.id = #{productId}
+        LIMIT 1
+    </select>
+
+    <resultMap id="getProductBookByIdResultMap" type="cn.sparke.goods.modules.v1.product.bean.ProductBean">
+        <result property="id" column="id" />
+        <result property="productId" column="productId" />
+        <result property="name" column="name" />
+        <result property="brief" column="brief" />
+        <result property="content" column="content" />
+        <result property="type" column="type" />
+        <result property="coverImg" column="coverImg" />
+        <result property="contentImgs" column="contentImgs" />
+        <result property="originalPrice" column="originalPrice" />
+        <result property="presentPrice" column="presentPrice" />
+        <result property="saleNum" column="saleNum" />
+        <result property="evaluateStar" column="evaluateStar" />
+        <result property="evaluateNum" column="evaluateNum" />
+        <result property="isSend" column="isSend" />
+        <result property="isPostage" column="isPostage" />
+        <result property="isPromotion" column="isPromotion" />
+        <result property="postage" column="postage" />
+        <result property="presss" column="presss" />
+        <result property="hasCoupon" column="hasCoupon" />
+        <result property="isLike" column="isLike" />
+        <collection property="couponRuleList" ofType="cn.sparke.goods.modules.v1.product.bean.CouponRuleBean" column="{userId=$userId, productId=productId}" select="getCouponRuleList" ></collection>
+    </resultMap>
+
+    <select id="getProductBookById" resultMap="getProductBookByIdResultMap">
+        SELECT
+            tpb.id,
+            tp.id AS productId,
+            tp.name,
+            tp.brief,
+            tp.content,
+            tp.`type`,
+            tp.cover_img AS coverImg,
+            tp.content_imgs AS contentImgs,
+            tp.original_price AS originalPrice,
+            tp.present_price AS presentPrice,
+            tp.sale_num AS saleNum,
+            tp.evaluate_star AS evaluateStar,
+            tp.evaluate_num AS evaluateNum,
+            tp.is_send AS isSend,
+            tp.is_postage AS isPostage,
+            tp.is_promotion AS isPromotion,
+            tp.postage,
+            tpb.presss,
+            tp.create_date AS createDate,
+            (CASE (SELECT COUNT(1) FROM tb_coupon_gain_scene WHERE `type` = 1 AND content_id = tp.id) WHEN 0 THEN 0 ELSE 1 END) AS hasCoupon,
+            (CASE (SELECT COUNT(1) FROM tb_user_favorite tuf WHERE tuf.`type`= 2 AND tuf.target_id = tpb.id AND tuf.user_id = #{userId}) WHEN 0 THEN 0 ELSE 1 END) AS isLike,
+            #{userId} AS $userId
+        FROM
+            tb_product AS tp
+            INNER JOIN tb_product_book AS tpb ON tpb.product_id = tp.id
+        WHERE
+            tp.`type` = 2 AND tp.id = #{productId}
+    </select>
+
+    <select id="getCouponRuleList" parameterType="java.util.HashMap" resultType="cn.sparke.goods.modules.v1.product.bean.CouponRuleBean">
+        SELECT
+            tcr.id,
+            tcgs.id AS gainSceneId,
+            tcr.title,
+            tcr.effect_date AS effectDate,
+            tcr.invalid_date AS invalidDate,
+            tcr.min_money AS minMoney,
+            tcr.discount_money AS discountMoney,
+            (CASE (SELECT COUNT(1) FROM tb_coupon_gain_record AS tcgr WHERE tcgr.rule_id = tcr.id AND tcgr.user_id = #{userId}) WHEN 0 THEN 0 ELSE 1 END) AS isGain
+        FROM
+            tb_coupon_gain_scene AS tcgs
+            LEFT JOIN tb_coupon_rule AS tcr ON tcgs.rule_id = tcr.id AND tcr.del_flag = 0
+        WHERE
+            tcgs.del_flag = 0 AND
+            tcgs.type = 1 AND
+            tcgs.content_id = #{productId}
+    </select>
+
+</mapper>

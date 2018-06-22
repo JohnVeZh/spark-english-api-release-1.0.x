@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="cn.sparke.community.modules.v1.activity.mapper.CommunityActivityMapper">
+
+    <select id="findList" resultType="cn.sparke.community.modules.v1.activity.bean.CommunityActivityBean">
+        SELECT
+            tca.id,
+            tca.title,
+            tca.brief,
+            tca.comment_num AS commentNum,
+            tca.create_date AS createDate,
+            ifnull((SELECT 1 FROM tb_user_praise tup WHERE tup.content_type = 2 AND tup.content_id = tca.id AND tup.user_id = #{userId} LIMIT 1), 0) AS isLike,
+            tca.like_num AS likeNum,
+            tca.img_list AS imgList
+        FROM tb_community_activity AS tca
+        WHERE tca.del_flag = 0 and tca.is_show = 1
+        ORDER BY tca.is_top DESC, tca.top_time DESC, tca.is_recommend, tca.recommend_time DESC, tca.create_date DESC
+    </select>
+
+    <resultMap id="communityActivityDetailsResultMap" type="cn.sparke.community.modules.v1.activity.bean.CommunityActivityBean">
+        <result property="id" column="id" />
+        <result property="title" column="title" />
+        <result property="content" column="content" />
+        <result property="brief" column="brief" />
+        <result property="createDate" column="createDate" />
+        <result property="isRecommend" column="isRecommend" />
+        <result property="isLike" column="isLike" />
+        <result property="likeNum" column="likeNum" />
+        <result property="readNum" column="readNum" />
+        <result property="serviceStatus" column="serviceStatus" />
+        <result property="commentNum" column="commentNum" />
+        <result property="isAttention" column="isAttention" />
+        <result property="attentionNum" column="attentionNum" />
+        <result property="isTop" column="isTop" />
+        <result property="imgList" column="imgList" />
+        <result property="hasCoupon" column="hasCoupon" />
+        <collection property="couponRuleList" ofType="cn.sparke.community.modules.v1.activity.bean.CouponRuleBean">
+            <id property="id" column="crId" />
+            <result property="gainSceneId" column="cgsGainSceneId" />
+            <result property="title" column="crTitle" />
+            <result property="effectDate" column="crEffectDate" />
+            <result property="invalidDate" column="crInvalidDate" />
+            <result property="minMoney" column="crMinMoney" />
+            <result property="discountMoney" column="crDiscountMoney" />
+            <result property="isGain" column="crIsGain" />
+        </collection>
+    </resultMap>
+
+    <select id="getById" resultMap="communityActivityDetailsResultMap">
+        SELECT
+            tca.id,
+            tca.title,
+            tca.content,
+            tca.brief,
+            tca.create_date AS createDate,
+            tca.is_recommend AS isRecommend,
+            (CASE (SELECT COUNT(1) FROM tb_user_praise WHERE content_type = 2 AND content_id = tca.id AND user_id = #{userId}) WHEN 0 THEN 0 ELSE 1 END) AS isLike,
+            tca.like_num AS likeNum,
+            tca.read_num AS readNum,
+            tca.service_status AS serviceStatus,
+            tca.comment_num AS commentNum,
+            (CASE (SELECT COUNT(1) FROM tb_user_attention WHERE content_type = 1 AND content_id = tca.id AND user_id = #{userId}) WHEN 0 THEN 0 ELSE 1 END) AS isAttention,
+            tca.attention_num AS attentionNum,
+            tca.is_top AS isTop,
+            tca.img_list AS imgList,
+            (CASE (SELECT COUNT(1) FROM tb_coupon_gain_scene WHERE type = 3 AND content_id = tca.id) WHEN 0 THEN 0 ELSE 1 END) AS hasCoupon,
+            tcr.id AS crId,
+            tcgs.id AS cgsGainSceneId,
+            tcr.title AS crTitle,
+            tcr.effect_date AS crEffectDate,
+            tcr.invalid_date AS crInvalidDate,
+            tcr.min_money AS crMinMoney,
+            tcr.discount_money AS crDiscountMoney,
+            (CASE (SELECT COUNT(1) FROM tb_coupon_gain_record AS tcgr WHERE tcgr.rule_id = tcr.id AND tcgr.user_id = #{userId}) WHEN 0 THEN 0 ELSE 1 END) AS crIsGain
+        FROM
+        tb_community_activity AS tca LEFT JOIN
+        tb_coupon_gain_scene AS tcgs ON tca.id = tcgs.content_id AND tcgs.type = 3 AND tcgs.del_flag = 0 LEFT JOIN
+        tb_coupon_rule AS tcr ON tcgs.rule_id = tcr.id AND tcr.del_flag = 0
+        WHERE tca.id = #{activityId}
+    </select>
+
+    <!--增加活动查看数-->
+    <update id="addReadNum">
+        UPDATE tb_community_activity SET read_num = read_num + 1 WHERE id = #{activityId}
+    </update>
+
+
+</mapper>

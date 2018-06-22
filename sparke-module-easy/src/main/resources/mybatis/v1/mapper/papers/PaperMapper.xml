@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.easy.modules.v1.papers.mapper.PaperMapper">
+
+    <select id="queryPapersByCatalogId" resultType="cn.sparke.easy.modules.v1.papers.bean.PaperBean">
+        SELECT
+            tp.id,
+            tp.`name`
+        FROM
+            tb_paper tp,
+            tb_paper_catalog tpc
+        WHERE
+            tp.catalog_id = tpc.id
+        AND tp.catalog_id = #{catalogId}
+        AND tpc.section_code = #{sectionCode}
+        AND tpc.type = 3
+        AND tp.del_flag=0
+        ORDER BY tp.sort ASC ,tp.create_date DESC
+    </select>
+
+
+
+    <resultMap id="PaperResultMap" type="cn.sparke.easy.modules.v1.papers.bean.PaperStructureBean">
+        <id column="id" property="id"></id>
+        <result column="name" property="name"></result>
+        <result column="strucContent" property="content"></result>
+
+        <collection property="itemList" ofType="cn.sparke.easy.modules.v1.papers.bean.QuestionBean">
+            <id column="questionId" property="id"></id>
+            <result column="questionName" property="name"></result>
+            <result column="type" property="type"></result>
+            <result column="questionContent" property="content"></result>
+            <result column="hasItem" property="hasItem"></result>
+            <result column="questionNum" property="questionNum"></result>
+            <result column="quesionAnalysis" property="analysis"></result>
+            <result column="tapescripts" property="tapescripts"></result>
+            <result column="audioUrl" property="audioUrl"></result>
+            <result column="translation" property="translation"></result>
+
+            <collection property="questionItem" ofType="cn.sparke.easy.modules.v1.papers.bean.ItemBean">
+                <id column="itemId" property="id"></id>
+                <result column="itemContent" property="content"></result>
+                <result column="itemAnalysis" property="analysis"></result>
+
+                <collection property="optionList" ofType="cn.sparke.easy.modules.v1.papers.bean.OptionBean">
+                    <id column="optionId" property="id"></id>
+                    <result column="optionName" property="name"></result>
+                    <result column="optionContent" property="content"></result>
+                    <result column="isAnswer" property="isAnswer"></result>
+                </collection>
+            </collection>
+        </collection>
+
+    </resultMap>
+
+    <select id="getPaperById" resultMap="PaperResultMap">
+        SELECT
+            struc.id AS id,
+            struc.`name` AS name,
+            struc.content AS strucContent,
+            question.id AS questionId,
+            question.`name` AS questionName,
+            question.type AS type,
+            question.content AS questionContent,
+            question.has_item AS hasItem,
+            question.question_num AS questionNum,
+            question.analysis AS quesionAnalysis,
+            listening.tapescripts AS tapescripts,
+            listening.audio_url AS audioUrl,
+            (CASE question.type WHEN 1 THEN listening.translation WHEN 2 THEN reading.translation ELSE '' END ) AS translation,
+            item.id AS itemId,
+            item.content AS itemContent,
+            item.analysis AS itemAnalysis,
+            qoption.id AS optionId,
+            qoption.`name` AS optionName,
+            qoption.content AS optionContent,
+            qoption.is_answer AS isAnswer
+
+        FROM
+            tb_paper_structure struc
+            LEFT JOIN tb_paper_question pquestion
+                ON struc.id=pquestion.structure_id AND pquestion.del_flag=0
+            LEFT JOIN tb_question question
+                ON pquestion.question_id=question.id AND question.del_flag=0
+            LEFT JOIN tb_question_listening listening
+                ON question.id=listening.question_id
+            LEFT JOIN tb_question_reading reading
+                ON question.id=reading.question_id
+            LEFT JOIN tb_question_item item
+                ON question.id=item.question_id AND item.del_flag=0
+            LEFT JOIN tb_question_option qoption
+                ON item.id=qoption.item_id AND qoption.del_flag=0
+        WHERE
+            struc.del_flag=0
+            AND struc.is_leaf=1
+            AND struc.paper_id=#{paperId}
+        ORDER BY struc.`name` ASC
+
+
+
+    </select>
+
+
+</mapper>

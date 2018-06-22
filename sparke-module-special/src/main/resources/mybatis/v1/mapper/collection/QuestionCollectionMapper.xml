@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.collection.mapper.QuestionCollectionMapper">
+    <insert id="insert">
+        INSERT INTO tb_question_collection
+        (
+        id,
+        user_id,
+        question_id,
+        structure_id,
+        section_code,
+        type,
+        content_type,
+        create_date,
+        update_date
+        )
+        VALUES(
+        #{id},
+        #{userId},
+        #{questionId},
+        #{structureId},
+        #{sectionCode},
+        #{type},
+        #{contentType},
+        #{createDate},
+        #{updateDate}
+        )
+    </insert>
+    <insert id="insertDetail">
+        INSERT INTO tb_question_collection_detail
+        (
+        id,
+        collection_id,
+        structure_id,
+        user_id,
+        question_id,
+        question_item_id,
+        type,
+        content_type,
+        create_date,
+        update_date
+        )
+        VALUES(
+        #{id},
+        #{collectionId},
+        #{structureId},
+        #{userId},
+        #{questionId},
+        #{questionItemId},
+        #{type},
+        #{contentType},
+        #{createDate},
+        #{updateDate}
+        )
+    </insert>
+    <delete id="delete">
+        DELETE FROM tb_question_collection
+        WHERE user_id = #{userId}
+        AND question_id = #{questionId} AND type = 4
+    </delete>
+    <delete id="deleteDetail">
+        DELETE FROM tb_question_collection_detail
+        WHERE user_id = #{userId}
+        AND question_item_id = #{questionItemId} AND type = 4
+    </delete>
+    <select id="getDetailCountByQuestionId" resultType="int">
+        SELECT count(1) FROM tb_question_collection_detail
+        WHERE user_id = #{userId}
+        AND question_id = #{questionId} AND type = 4
+    </select>
+    <select id="findList" resultMap="collectionMap">
+        SELECT
+        collection.id,
+        collection.question_id,
+        structure.id AS structureId,
+        structure.name AS structureName,
+        question.name,
+        question.content,
+        question.type AS contentType,
+        collection.create_date,
+        #{userId} AS $userId
+        FROM tb_question_collection collection
+        INNER JOIN tb_paper_structure structure ON collection.structure_id = structure.id
+        INNER JOIN tb_question question  ON question.id = collection.question_id
+        WHERE collection.user_id = #{userId} AND collection.section_code = #{sectionCode} AND collection.type = #{type} AND collection.del_flag = 0 AND collection.content_type=#{contentType}
+        ORDER BY collection.create_date DESC
+    </select>
+    <resultMap id="collectionMap" type="cn.sparke.special.modules.v1.collection.bean.QuestionCollectionBean">
+        <id property="id" column="id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="structureId" column="structureId"/>
+        <result property="structureName" column="structureName"/>
+        <result property="name" column="name"/>
+        <result property="content" column="content"/>
+        <result property="createDate" column="create_date"/>
+        <association property="num" column="{collectionId=id,userId=$userId,contentType=contentType}"
+                     javaType="int" select="getCollectionNum"/>
+    </resultMap>
+    <select id="getCollectionNum" resultType="int">
+        <choose>
+            <when test="contentType == 1 or contentType == 2">
+                SELECT count(1) FROM tb_question_collection_detail detail
+                WHERE detail.collection_id = #{collectionId}  AND detail.user_id = #{userId}
+            </when>
+            <when test="contentType == 3 or contentType == 4">
+                SELECT 1
+            </when>
+            <otherwise>
+                SELECT 0
+            </otherwise>
+        </choose>
+    </select>
+    <select id="getCollection" resultMap="infoMap">
+        <choose>
+        <when test="type == 1">
+            SELECT
+            question.id,
+            question.name,
+            collection.structure_id,
+            structure.name as structureName,
+            question.content,
+            question.type ,
+            question.has_item ,
+            question.question_num ,
+            question.section_code,
+            question.analysis,
+            listening.audio_url,
+            listening.tapescripts,
+            listening.translation,
+            listening.subtitle_url,
+            null as reference,
+            null as analysis_cc_id,
+            item.id as itemId,
+            item.content as itemContent,
+            item.analysis as itemAnalysis,
+            1 as isItemCollect,
+            options.id AS optionId,
+            options.is_answer AS optionIsAnswer,
+            options.name AS optionName,
+            options.content AS optionContent,
+            #{userId} AS $userId
+            FROM tb_question_collection collection
+            INNER JOIN tb_paper_structure structure ON structure.id = collection.structure_id
+            INNER JOIN tb_question question ON collection.question_id = question.id
+            INNER JOIN tb_question_listening listening ON question.id = listening.question_id
+            INNER JOIN tb_question_collection_detail detail ON detail.collection_id = collection.id
+            LEFT JOIN tb_question_item item ON item.id = detail.question_item_id AND item.del_flag = 0 AND question.has_item = 1
+            LEFT JOIN tb_question_option options ON item.id = options.item_id AND options.del_flag = 0
+            WHERE collection.id = #{collectionId}  ORDER BY  item.sort, options.sort
+        </when>
+        <when test="type == 2">
+            SELECT
+            question.id,
+            question.name,
+            collection.structure_id,
+            structure.name as structureName,
+            question.content,
+            question.type ,
+            question.has_item ,
+            question.question_num ,
+            question.analysis,
+            null as audio_url,
+            null as tapescripts,
+            null as subtitle_url,
+            null as reference,
+            null as analysis_cc_id,
+            reading.translation,
+            item.id as itemId,
+            item.content as itemContent,
+            item.analysis as itemAnalysis,
+            1 as isItemCollect,
+            options.id AS optionId,
+            options.is_answer AS optionIsAnswer,
+            options.name AS optionName,
+            options.content AS optionContent,
+            #{userId} AS $userId
+            FROM tb_question_collection collection
+            INNER JOIN tb_paper_structure structure ON structure.id = collection.structure_id
+            INNER JOIN tb_question question ON collection.question_id = question.id
+            INNER JOIN tb_question_reading reading ON question.id = reading.question_id
+            INNER JOIN tb_question_collection_detail detail ON detail.collection_id = collection.id
+            LEFT JOIN tb_question_item item ON item.id = detail.question_item_id AND item.del_flag = 0 AND question.has_item = 1
+            LEFT JOIN tb_question_option options ON item.id = options.item_id AND options.del_flag = 0
+            WHERE collection.id = #{collectionId} ORDER BY  item.sort, options.sort
+        </when>
+        <when test="type == 3">
+            SELECT
+            question.id,
+            question.name,
+            collection.structure_id,
+            structure.name as structureName,
+            question.content,
+            question.type ,
+            question.has_item ,
+            question.question_num ,
+            question.analysis,
+            translations.reference,
+            translations.analysis_cc_id,
+            null as audio_url,
+            null as tapescripts,
+            null as subtitle_url,
+            null as translation,
+            null as itemId,
+            null as itemContent,
+            null as itemAnalysis,
+            1 as isItemCollect,
+            null as optionId,
+            null as optionIsAnswer,
+            null as optionName,
+            null as optionContent,
+            #{userId} AS $userId
+            FROM tb_question_collection collection
+            INNER JOIN tb_paper_structure structure ON structure.id = collection.structure_id
+            INNER JOIN tb_question question ON collection.question_id = question.id
+            INNER JOIN tb_question_translation translations ON question.id = translations.question_id
+            WHERE collection.id = #{collectionId}
+        </when>
+        <when test="type == 4">
+            SELECT
+            question.id,
+            question.name,
+            collection.structure_id,
+            structure.name as structureName,
+            question.content,
+            question.type ,
+            question.has_item ,
+            question.question_num ,
+            question.analysis,
+            writing.reference,
+            writing.analysis_cc_id,
+            null as audio_url,
+            null as tapescripts,
+            null as subtitle_url,
+            null as translation,
+            null as itemId,
+            null as itemContent,
+            null as itemAnalysis,
+            1 as isItemCollect,
+            null as optionId,
+            null as optionIsAnswer,
+            null as optionName,
+            null as optionContent,
+            #{userId} AS $userId
+            FROM tb_question_collection collection
+            INNER JOIN tb_paper_structure structure ON structure.id = collection.structure_id
+            INNER JOIN tb_question question ON collection.question_id = question.id
+            INNER JOIN tb_question_writing writing ON question.id = writing.question_id
+            WHERE collection.id = #{collectionId}
+        </when>
+        <otherwise >
+            SELECT NULL
+        </otherwise>
+        </choose>
+    </select>
+    <select id="getDetail" resultType="cn.sparke.special.modules.v1.record.bean.QuestionRecordDetailBean">
+        SELECT
+        user_option_id,
+        right_option_id,
+        status
+        FROM tb_question_record_detail
+        WHERE question_item_id = #{itemId}
+        AND user_id = #{userId}
+        ORDER BY create_date DESC
+
+    </select>
+    <select id="getUserRecordDifficultyLevel" resultType="int">
+        SELECT record.difficulty_level
+        FROM tb_question_record record
+        WHERE record.user_id=#{userId}
+        AND record.question_id = #{questionId}
+        AND record .question_type>2
+        AND record.del_flag = 0
+    </select>
+    <resultMap id="infoMap" type="cn.sparke.special.modules.v1.question.bean.QuestionBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="structureId" column="structure_id"/>
+        <result property="content" column="content"/>
+        <result property="type" column="type"/>
+        <result property="hasItem" column="has_item"/>
+        <result property="questionNum" column="question_num"/>
+        <result property="sectionCode" column="section_code"/>
+        <result property="analysis" column="analysis"/>
+        <result property="audioUrl" column="audio_url"/>
+        <result property="tapescripts" column="tapescripts"/>
+        <result property="translation" column="translation"/>
+        <result property="reference" column="reference"/>
+        <result property="analysisCcId" column="analysis_cc_id"/>
+        <result property="subtitleUrl" column="subtitle_url"/>
+        <association property="difficultyLevel" column="{userId=$userId,questionId=id}"
+                     javaType="int" select="getUserRecordDifficultyLevel"/>
+        <collection property="questionItemList" ofType="cn.sparke.special.modules.v1.question.bean.QuestionItemBean">
+            <id property="id" column="itemId"/>
+            <result property="content" column="itemContent"/>
+            <result property="analysis" column="itemAnalysis"/>
+            <result property="isCollect" column="isItemCollect"/>
+            <association property="recordDetail" javaType="cn.sparke.special.modules.v1.record.bean.QuestionRecordDetailBean" column="{userId=$userId,itemId=itemId}" select="getDetail">
+                <id property="userOptionId" column="user_option_id" jdbcType="String"/>
+                <result property="rightOptionId" column="right_option_id" jdbcType="String"/>
+                <result property="status" column="status" jdbcType="int"/>
+            </association>
+            <collection property="optionList" ofType="cn.sparke.special.modules.v1.question.bean.QuestionOptionBean">
+                <id property="id" column="optionId"/>
+                <result property="name" column="optionName"/>
+                <result property="content" column="optionContent"/>
+                <result property="isAnswer" column="optionIsAnswer"/>
+            </collection>
+
+        </collection>
+    </resultMap>
+
+    <select id="getCollectionCount" resultType="int">
+        SELECT COUNT(1) FROM tb_question_collection col  INNER JOIN tb_paper_structure structure ON structure.id = col.structure_id AND col.del_flag = 0
+        LEFT JOIN tb_question_collection_detail detail ON col.id = detail.collection_id
+        WHERE col.user_id=#{userId} AND col.section_code = #{sectionCode}
+    </select>
+    <select id="getCollectionInfo" resultType="cn.sparke.special.modules.v1.collection.bean.QuestionCollectionBean">
+        SELECT id FROM tb_question_collection WHERE question_id = #{questionId} AND user_id = #{userId} limit 1
+    </select>
+    <select id="getCollectionDetailInfo" resultType="cn.sparke.special.modules.v1.collection.bean.QuestionCollectionDetailBean">
+        SELECT id FROM tb_question_collection_detail WHERE question_item_id = #{itemId} AND user_id = #{userId} limit 1
+    </select>
+
+    <update id="update" >
+        UPDATE
+        tb_question_collection
+        <set>
+            <if test="sectionCode!=null">
+                section_code = #{sectionCode},
+            </if>
+            <if test="userId!=null">
+                user_id = #{userId},
+            </if>
+            <if test="structureId!=null">
+                structure_id = #{structureId},
+            </if>
+            <if test="questionId!=null">
+                question_id = #{questionId},
+            </if>
+            <if test="type!=null">
+                type = #{type},
+            </if>
+            <if test="contentType!=null">
+                content_type = #{contentType},
+            </if>
+            <if test="updateDate!=null">
+                update_date = #{updateDate},
+            </if>
+        </set>
+        WHERE id= #{id} AND del_flag = 0
+    </update>
+
+    <update id="updateDetail">
+        UPDATE
+        tb_question_collection_detail
+        <set>
+            <if test="id!=null">
+                id = #{id},
+            </if>
+            <if test="collectionId!=null">
+                collection_id = #{collectionId},
+            </if>
+            <if test="structureId!=null">
+                structure_id = #{structureId},
+            </if>
+            <if test="userId!=null">
+                user_id = #{userId},
+            </if>
+            <if test="questionId!=null">
+                question_id = #{questionId},
+            </if>
+            <if test="questionItemId!=null">
+                question_item_id = #{questionItemId},
+            </if>
+            <if test="type!=null">
+                type = #{type},
+            </if>
+            <if test="contentType!=null">
+                content_type = #{contentType},
+            </if>
+            <if test="updateDate!=null">
+                update_date = #{updateDate},
+            </if>
+            update_date = #{updateDate}
+        </set>
+        WHERE id= #{id} AND del_flag = 0
+    </update>
+</mapper>

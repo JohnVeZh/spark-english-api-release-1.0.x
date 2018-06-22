@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="cn.sparke.goods.modules.v1.shoppingCart.mapper.ProductShoppingCartMapper">
+
+    <insert id="insert" parameterType="cn.sparke.goods.modules.v1.shoppingCart.bean.ProductShoppingCartBean">
+        <selectKey keyProperty="recordCount" resultType="int" order="BEFORE">
+            SELECT COUNT(1) as recordCount FROM tb_product_shopping_cart WHERE user_id = #{userId} AND product_id = #{productId}
+        </selectKey>
+        <if test="recordCount > 0">
+            UPDATE tb_product_shopping_cart
+            SET product_num = product_num + #{productNum}
+            WHERE user_id = #{userId} AND product_id = #{productId}
+        </if>
+        <if test="recordCount==0">
+            INSERT INTO tb_product_shopping_cart
+            (id, user_id, product_id, product_num, create_date)
+            VALUES
+            (#{id}, #{userId}, #{productId}, #{productNum}, now())
+        </if>
+    </insert>
+
+    <update id="update">
+        UPDATE tb_product_shopping_cart
+        SET product_num = #{productNum}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM tb_product_shopping_cart WHERE id = #{id}
+    </delete>
+
+    <select id="findList" resultType="cn.sparke.goods.modules.v1.shoppingCart.bean.ProductShoppingCartBean">
+        SELECT
+        tpsc.id,
+        tpsc.product_id AS productId,
+        tpsc.product_num AS productNum,
+        tp.name AS productName,
+        tp.list_img AS productImg,
+        tp.present_price AS productPrice
+        FROM tb_product_shopping_cart AS tpsc
+        LEFT JOIN tb_product AS tp ON tp.id = tpsc.product_id
+        WHERE tpsc.user_id = #{userId}
+        ORDER BY tpsc.create_date DESC
+    </select>
+
+    <select id="getShoppingCartNum" resultType="int">
+        SELECT  COUNT(1) FROM tb_product_shopping_cart WHERE user_id = #{userId}
+    </select>
+
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.base.modules.v1.banners.mapper.BannerMapper">
+    <select id="findList" resultType="cn.sparke.base.modules.v1.banners.bean.BannerBean">
+        SELECT
+            id,
+            title,
+            img,
+            jump_type,
+            url,
+            content_id
+        FROM tb_banner
+        WHERE del_flag = 0
+              AND terminal_type = #{terminalType}
+              AND module_type = #{moduleType}
+              AND section_code = #{sectionCode}
+        ORDER BY sort, create_date DESC
+    </select>
+    <select id="getById" resultType="cn.sparke.base.modules.v1.banners.bean.BannerBean">
+        SELECT
+            id,
+            title,
+            img,
+            create_date,
+            content,
+            jump_type,
+            url,
+            content_id
+        FROM tb_banner
+        WHERE del_flag = 0
+              AND id = #{id}
+    </select>
+</mapper>

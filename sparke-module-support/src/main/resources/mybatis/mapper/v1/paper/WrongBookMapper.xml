@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.exam.mapper.WrongBookMapper">
+
+    <!--用于resultMap 引用-->
+    <resultMap id="QuestionItemResultMap" type="cn.sparke.support.modules.v1.exam.bean.paper.vo.QuestionItem">
+
+        <id column="questionId" property="id"/>
+        <result column="structureId" property="structureId"/>
+        <result column="pStructureIds" property="pStructureIds"/>
+        <result column="structureAlias" property="structureAlias"/>
+        <result column="questionName" property="name"/>
+        <result column="questionContent" property="content"/>
+        <result column="questionType" property="type"/>
+        <result column="questionHasItem" property="hasItem"/>
+        <result column="questionNum" property="questionNum"/>
+        <result column="sectionCode" property="sectionCode"/>
+
+        <result column="audioUrl" property="audioUrl"/>
+        <result column="tapescripts" property="tapescripts"/>
+        <result column="translation" property="translation"/>
+        <result column="subtitleUrl" property="subtitleUrl"/>
+        <result column="subtitleSize" property="subtitleSize"/>
+        <result column="audioSize" property="audioSize"/>
+        <result column="reference" property="reference"/>
+        <result column="analysis" property="analysis"/>
+        <result column="analysisCcId" property="analysisCcId"/>
+
+        <collection property="questionItemList" javaType="java.util.ArrayList"
+                    ofType="cn.sparke.support.modules.v1.exam.bean.paper.vo.QuestionSubItem" column="questionSubId">
+            <id column="questionSubId" property="id"/>
+            <result column="questionSubContent" property="content"/>
+            <result column="questionSubAnalysis" property="analysis"/>
+            <collection property="optionList" javaType="java.util.ArrayList"
+                        ofType="cn.sparke.support.modules.v1.exam.bean.paper.vo.OptionItem" column="optionId">
+                <id column="optionId" property="id"/>
+                <result column="optionName" property="name"/>
+                <result column="optionContent" property="content"/>
+                <result column="isAnswer" property="isAnswer"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="WrongBookCatalog" type="cn.sparke.support.modules.v1.exam.bean.wrongbook.vo.WrongBooks">
+        <id column="paperId" property="id"/>
+        <result column="paperName" property="name"/>
+        <result column="paperNum" property="num"/>
+        <collection property="structureList" javaType="java.util.ArrayList" ofType="cn.sparke.support.modules.v1.exam.bean.wrongbook.vo.StructureItem" column="paperId">
+            <id column="structureId" property="id"/>
+            <result column="structureAlias" property="name"/>
+            <result column="questionType" property="questionType"/>
+           <!-- <result column="questionNum" property="num"/>-->
+            <association property="num" column="{paperId=paperId,userId=userId,structureAlias=structureAlias}"
+                         javaType="int" select="getQuestionNum"/>
+        </collection>
+    </resultMap>
+
+    <select id="getQuestionNum" resultType="int">
+        SELECT count(1)
+        FROM tb_question_wrong_book tqwb2
+            INNER JOIN tb_question_wrong_book_detail tqwbd2 on tqwbd2.wrong_book_id = tqwb2.id AND tqwb2.paper_id = tqwbd2.paper_id
+        WHERE  tqwb2.user_id = #{userId} and tqwb2.paper_id = #{paperId} and tqwb2.structure_alias = #{structureAlias}
+    </select>
+
+    <select id="findWrongBook" resultMap="WrongBookCatalog">
+        SELECT
+            tqwb.paper_id AS paperId,
+            tp.name AS paperName,
+            tq.type AS questionType,
+            tqwb.structure_id AS structureId,
+            tqwb.structure_alias AS structureAlias,
+            #{userId} as userId
+        FROM tb_question_wrong_book tqwb
+            LEFT JOIN tb_paper tp ON tqwb.paper_id = tp.id AND tp.del_flag = 0
+            left join tb_question tq on tq.id = tqwb.question_id and tq.section_code = #{sectionCode}
+        WHERE tqwb.user_id = #{userId} AND tqwb.del_flag = 0 and tqwb.type = 2 and tqwb.section_code = #{sectionCode}
+    </select>
+
+    <select id="findWrongQuestionByStructureId" resultMap="QuestionItemResultMap">
+        SELECT
+        tqwb.structure_id AS structureId,
+        tqwb.structure_alias AS structureAlias,
+        tps.level  AS structureLevel,
+        tps.parent_ids AS pStructureIds,
+        tq.id              AS questionId,
+        tq.name            AS questionName,
+        tq.content         AS questionContent,
+        tq.type            AS questionType,
+        tq.has_item        AS questionHasItem,
+        tq.question_num    AS questionNum,
+        tq.section_code    AS sectionCode,
+
+        tql.audio_url      AS audioUrl,
+        tql.tapescripts,
+        tql.translation,
+        tql.subtitle_url   AS subtitleUrl,
+        tql.subtitle_size                                                                   AS subtitleSize,
+        tql.audio_size                                                                      AS audioSize,
+        tq.analysis,
+
+        IF(tq.type = 3,tqt.reference,IF(tq.type = 4,tqw.reference,NULL )) AS reference,
+        IF(tq.type = 3,tqt.analysis_cc_id,IF(tq.type = 4,tqw.analysis_cc_id,NULL)) AS analysisCcId,
+
+        tqi.id             AS questionSubId,
+        tqi.content        AS questionSubContent,
+        tqi.analysis       AS questionSubAnalysis,
+
+        tqo.id             AS optionId,
+        tqo.name           AS optionName,
+        tqo.content        AS optionContent,
+        tqo.is_answer      AS isAnswer
+        FROM tb_question_wrong_book_detail tqwb
+
+        LEFT JOIN tb_paper_structure tps ON tps.del_flag = 0 AND tqwb.structure_id = tps.id
+        LEFT JOIN tb_paper_question tpq ON tpq.structure_id = tps.id AND tqwb.paper_id = tpq.paper_id AND tpq.question_id = tqwb.question_id  AND tpq.del_flag = 0
+        LEFT JOIN tb_question_item tqi ON tqwb.question_item_id = tqi.id  AND tqi.del_flag = 0
+        LEFT JOIN tb_question_option tqo ON tqo.item_id = tqi.id AND tqo.del_flag = 0
+
+        LEFT JOIN tb_question tq ON tqwb.question_id = tq.id AND tq.del_flag = 0
+
+        LEFT JOIN tb_question_listening tql ON tql.question_id = tq.id
+        left join tb_question_translation tqt on tqt.question_id = tq.id
+        LEFT JOIN tb_question_writing tqw ON tqw.question_id = tq.id
+        WHERE tq.del_flag = 0
+        <foreach collection="structureIdList" item="structure" open="  and tqwb.user_id = #{userId} AND tps.id in  ( " separator=" , " close=" ) ">
+            #{structure.id}
+        </foreach>
+        ORDER BY  tps.sort,tpq.sort,tqi.sort, tqo.sort
+    </select>
+    <select id="findWrongQuestionByQuestionItemId" resultMap="QuestionItemResultMap">
+        SELECT
+            tps.id AS structureId,
+            tps.alias AS structureAlias,
+            tps.level  AS structureLevel,
+            tps.parent_ids AS pStructureIds,
+            tq.id              AS questionId,
+            tq.name            AS questionName,
+            tq.content         AS questionContent,
+            tq.type            AS questionType,
+            tq.has_item        AS questionHasItem,
+            tq.question_num    AS questionNum,
+            tq.section_code    AS sectionCode,
+
+            tql.audio_url      AS audioUrl,
+            tql.tapescripts,
+            tql.translation,
+            tql.subtitle_url   AS subtitleUrl,
+        tql.subtitle_size                                                                   AS subtitleSize,
+        tql.audio_size                                                                      AS audioSize,
+            tq.analysis,
+
+            IF(tq.type = 3,tqt.reference,IF(tq.type = 4,tqw.reference,NULL )) AS reference,
+            IF(tq.type = 3,tqt.analysis_cc_id,IF(tq.type = 4,tqw.analysis_cc_id,NULL)) AS analysisCcId,
+
+            tqi.id             AS questionSubId,
+            tqi.content        AS questionSubContent,
+            tqi.analysis       AS questionSubAnalysis,
+
+            tqo.id             AS optionId,
+            tqo.name           AS optionName,
+            tqo.content        AS optionContent,
+            tqo.is_answer      AS isAnswer
+        FROM tb_question tq
+
+            LEFT JOIN tb_paper_structure tps ON tps.del_flag = 0
+            LEFT JOIN tb_paper_question tpq ON tps.id = tpq.structure_id AND tpq.del_flag = 0
+            LEFT JOIN tb_question_item tqi ON tqi.question_id = tq.id AND tqi.del_flag = 0
+            LEFT JOIN tb_question_option tqo ON tqo.item_id = tqi.id AND tqo.del_flag = 0
+
+            LEFT JOIN tb_question_listening tql ON tql.question_id = tq.id
+            left join tb_question_translation tqt on tqt.question_id = tq.id
+            LEFT JOIN tb_question_writing tqw ON tqw.question_id = tq.id
+        WHERE tq.del_flag = 0
+
+        <if test="questionItemId != null and questionItemId != '' ">
+            AND (tqi.id = #{questionItemId} or tq.id = #{questionItemId})
+        </if>
+        ORDER BY tpq.sort, tqi.sort, tqo.sort
+    </select>
+    <resultMap id="RecommendWrongBook" type="cn.sparke.support.modules.v1.exam.bean.wrongbook.vo.RecommendPaper">
+        <id column="paperId" property="id"/>
+        <result column="paperName" property="name"/>
+        <collection property="questionList" javaType="ArrayList" ofType="cn.sparke.support.modules.v1.exam.bean.wrongbook.vo.RecommendQuestion">
+            <result column="questionItemId" property="id"/>
+            <result column="questionType" property="type"/>
+            <result column="structureId" property="structureId"/>
+            <result column="questionName" property="name"/>
+        </collection>
+    </resultMap>
+    <select id="findRecommendWrongBook" resultMap="RecommendWrongBook">
+        SELECT
+            tp.id AS paperId,
+            tp.name AS paperName,
+            tpq.structure_id AS structureId,
+            tq.type AS questionType,
+            if(tq.type = 1,tqi.id,if(tq.type = 2,tqi.id,tq.id)) AS questionItemId,
+            tq.name AS questionName
+        FROM tb_paper tp
+        LEFT JOIN tb_paper_question tpq ON tpq.paper_id = tp.id AND  tpq.del_flag = 0
+        LEFT JOIN tb_question tq ON  tq.id = tpq.question_id AND tq.del_flag = 0
+        LEFT JOIN  tb_question_item tqi  on tqi.question_id = tq.id
+            WHERE  tp.del_flag = 0
+        <foreach collection="paperIdList" item="paperId" open=" and tp.id in  (" separator="," close=")">
+            #{paperId}
+        </foreach>
+        order by tp.sort,tpq.sort,tqi.sort
+    </select>
+    <select id="findRecommendPaper" resultMap="RecommendWrongBook">
+        SELECT
+            tp.id AS paperId,
+            tp.name AS paperName
+        FROM tb_paper tp
+            INNER JOIN tb_paper_catalog tpc on tpc.id = tp.catalog_id AND tpc.del_flag = 0
+        WHERE tp.del_flag = 0 AND tpc.type = 1
+            GROUP BY tp.id
+        ORDER BY mod(tp.create_date, #{random}),tpc.sort,tp.sort
+    </select>
+
+</mapper>

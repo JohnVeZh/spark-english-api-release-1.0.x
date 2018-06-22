@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.scan.modules.v1.codes.mapper.PaperMapper">
+
+    <resultMap id="PaperDetails" type="cn.sparke.scan.modules.v1.codes.bean.support.PaperDetails" >
+        <id  column="paperId" property="id"/>
+        <result column="paperName" property="name" />
+        <association property="captionListening" javaType="cn.sparke.scan.modules.v1.codes.bean.support.PaperCaptionListening">
+            <result column="audioUrl" property="audioUrl" />
+            <result  column="subtitleUrl" property="subtitleUrl"/>
+        </association>
+        <association property="video" javaType="cn.sparke.scan.modules.v1.codes.bean.support.PaperVideo">
+            <result column="videoName" property="name" />
+            <result column="ccId" property="ccId" />
+        </association>
+    </resultMap>
+
+    <select id="findByQrCode" resultMap="PaperDetails">
+        SELECT
+            tp.id AS paperId,
+            tp.name AS paperName,
+            tpcl.audio_url AS audioUrl,
+            tpcl.subtitle_url AS subtitleUrl,
+            tpclv.name AS videoName,
+            tpclv.cc_id AS ccId
+        FROM tb_paper tp
+            LEFT JOIN tb_paper_caption_listening tpcl on tp.id = tpcl.paper_id
+            LEFT JOIN tb_paper_caption_listening_video tpclv ON tp.id = tpclv.paper_id
+        WHERE tp.qr_code LIKE  CONCAT('%', #{qrCode}, '%') and tp.del_flag = 0
+        order by tp.sort
+    </select>
+    <select id="findByCatalogQrCode" resultMap="PaperDetails">
+        SELECT
+            tp.id AS paperId,
+            tp.name AS paperName,
+            tpcl.audio_url AS audioUrl,
+            tpcl.subtitle_url AS subtitleUrl,
+            tpclv.name AS videoName,
+            tpclv.cc_id AS ccId
+        FROM tb_paper tp
+
+            INNER JOIN tb_paper_group_relation tpgr on  tp.id = tpgr.paper_id AND tpgr.del_flag = 0
+            INNER JOIN tb_paper_group tpg ON tpgr.group_id = tpg.id AND tpg.del_flag = 0
+            INNER JOIN tb_paper_catalog tpc ON tpc.id = tpg.catalog_id AND tpc.type = 5 AND tpc.del_flag = 0
+
+            LEFT JOIN tb_paper_caption_listening tpcl on tp.id = tpcl.paper_id
+            LEFT JOIN tb_paper_caption_listening_video tpclv ON tp.id = tpclv.paper_id
+        WHERE tpc.qr_code LIKE  CONCAT('%', #{qrCode}, '%') and tp.del_flag = 0
+        order by tpc.sort,tp.sort
+    </select>
+
+
+    <select id="queryFamousTeacherVideoByQrCode" resultType="cn.sparke.scan.modules.v1.codes.bean.support.FamousTeacherVideo">
+        SELECT
+            tpnc.id,
+            tp.`name`,
+            tp.cover_img coverImg
+
+        FROM
+            tb_product_network_course tpnc,tb_product tp
+        WHERE
+            tp.del_flag=0
+            AND	tpnc.is_famous_teacher=1
+            AND tp.is_show=1
+            AND tpnc.product_id=tp.id
+            AND qr_code = #{qrCode}
+    </select>
+
+
+</mapper>

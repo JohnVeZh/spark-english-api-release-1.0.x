@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.paper.mapper.SpecialExplainMapper">
+    <select id="findList"  resultType="cn.sparke.special.modules.v1.paper.bean.SpecialExplainBean">
+        SELECT
+        id,
+        title,
+        content_type,
+        content_id,
+        content,
+        url,
+        visit_num
+        FROM
+        tb_special_explain
+        where type = #{type} AND section_code=#{sectionCode} AND del_flag=0
+    </select>
+    <select id="getExplain"  resultType="cn.sparke.special.modules.v1.paper.bean.SpecialExplainBean">
+        SELECT
+        id,
+        title,
+        content_type,
+        content_id,
+        content,
+        url,
+        visit_num
+        FROM
+        tb_special_explain
+        where del_flag=0
+        AND id = #{explainId}
+    </select>
+
+    <update id="addVisitNum">
+        UPDATE
+        tb_special_explain
+        <set>
+          visit_num = visit_num+1,
+        </set>
+        WHERE id= #{explainId} AND del_flag = 0
+    </update>
+</mapper>

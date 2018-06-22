@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.exam.mapper.report.TbQuestionRecordMapper">
+
+    <insert id="insertList" parameterType="cn.sparke.support.modules.v1.exam.bean.submit.po.TbQuestionRecord">
+        insert into tb_question_record (id, user_id, paper_id,type,
+                                        section_code, question_type, structure_id,
+                                        question_num, question_id, is_finish,
+                                        difficulty_level, create_date, update_date,
+                                        sort, del_flag)
+        values
+            <foreach collection="questionRecordList" item="questionRecord" separator=" , ">
+                (#{questionRecord.id,jdbcType=VARCHAR}, #{questionRecord.userId,jdbcType=VARCHAR}, #{questionRecord.paperId,jdbcType=VARCHAR}, #{questionRecord.type,jdbcType=VARCHAR},
+                #{questionRecord.sectionCode,jdbcType=TINYINT}, #{questionRecord.questionType,jdbcType=TINYINT}, #{questionRecord.structureId,jdbcType=VARCHAR},
+                #{questionRecord.questionNum,jdbcType=INTEGER}, #{questionRecord.questionId,jdbcType=VARCHAR}, #{questionRecord.isFinish,jdbcType=TINYINT},
+                #{questionRecord.difficultyLevel,jdbcType=TINYINT}, #{questionRecord.createDate,jdbcType=TIMESTAMP}, #{questionRecord.updateDate,jdbcType=TIMESTAMP},
+                #{questionRecord.sort,jdbcType=INTEGER}, #{questionRecord.delFlag,jdbcType=TINYINT})
+            </foreach>
+
+    </insert>
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.scan.modules.v1.codes.mapper.GiftMapper">
+
+    <select id="queryPaperIdByQrCode" resultType="string">
+        SELECT
+            id
+        FROM
+            tb_gift_period_paper t
+        WHERE
+            t.qr_code = #{qr_code};
+    </select>
+
+    <select id="queryReportByPaperId" resultType="String">
+        SELECT
+            id
+        FROM
+            tb_gift_report t
+        WHERE
+            t.del_flag = 0
+            AND t.paper_id=#{paperId}
+            AND t.user_id=#{userId}
+            AND t.section_code=#{sectionCode}
+    </select>
+
+
+
+</mapper>

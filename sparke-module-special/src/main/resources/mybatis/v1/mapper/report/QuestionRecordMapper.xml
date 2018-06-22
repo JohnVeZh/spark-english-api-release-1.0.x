@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.record.mapper.QuestionRecordMapper">
+    <delete id="deleteRecordAndDetail" >
+    DELETE record,detail FROM tb_question_record record LEFT JOIN tb_question_record_detail detail ON record.id = detail.question_record_id
+  WHERE record.user_id = #{userId} AND record.question_id = #{questionId} AND record.structure_id = #{structureId} AND record.type = 1
+    </delete>
+    <delete id="deleteRecordAndDetailList" >
+        <foreach collection="recordList" item="ls" separator=";">
+            DELETE record,detail
+            FROM tb_question_record record
+            LEFT JOIN tb_question_record_detail detail
+            ON record.id = detail.question_record_id
+            WHERE record.user_id = #{ls.userId}
+            AND record.question_id = #{ls.questionId}
+            AND record.structure_id = #{ls.structureId}
+            AND record.type = 1
+        </foreach>
+    </delete>
+    <insert id="insertRecord">
+ INSERT INTO tb_question_record
+        (
+        id,
+        user_id,
+        paper_id,
+        section_code,
+        question_type,
+        structure_id,
+        question_num,
+        use_time,
+        type,
+        question_id,
+        is_finish,
+        difficulty_level,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES(
+        #{id},
+        #{userId},
+        #{paperId},
+        #{sectionCode},
+        #{questionType},
+        #{structureId},
+        #{questionNum},
+        #{useTime},
+        #{type},
+        #{questionId},
+        #{isFinish},
+        #{difficultyLevel},
+        #{createDate},
+        #{updateDate},
+        #{sort}
+        )
+    </insert>
+    <insert id="insertList">
+        INSERT INTO tb_question_record
+        (
+        id,
+        user_id,
+        paper_id,
+        section_code,
+        question_type,
+        structure_id,
+        question_num,
+        use_time,
+        type,
+        question_id,
+        is_finish,
+        difficulty_level,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES
+        <foreach collection="recordList" item="list" separator=",">
+        (
+        #{list.id},
+        #{list.userId},
+        #{list.paperId},
+        #{list.sectionCode},
+        #{list.questionType},
+        #{list.structureId},
+        #{list.questionNum},
+        #{list.useTime},
+        #{list.type},
+        #{list.questionId},
+        #{list.isFinish},
+        #{list.difficultyLevel},
+        #{list.createDate},
+        #{list.updateDate},
+        #{list.sort}
+        )
+        </foreach>
+    </insert>
+    <insert id="insertRecordDetail">
+         INSERT INTO tb_question_record_detail
+        (
+        id,
+        user_id,
+        question_id,
+        question_record_id,
+        question_item_id,
+        status,
+        user_option_id,
+        right_option_id,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES(
+        #{id},
+        #{userId},
+        #{questionId},
+        #{questionRecordId},
+        #{questionItemId},
+        #{status},
+        #{userOptionId},
+        #{rightOptionId},
+        #{createDate},
+        #{updateDate},
+        #{sort}
+        )
+    </insert>
+    <insert id="insertRecordDetailList">
+        INSERT INTO tb_question_record_detail
+        (
+        id,
+        user_id,
+        question_id,
+        question_record_id,
+        question_item_id,
+        status,
+        user_option_id,
+        right_option_id,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES
+        <foreach collection="detailList" item="list" separator=",">
+        (
+        #{list.id},
+        #{list.userId},
+        #{list.questionId},
+        #{list.questionRecordId},
+        #{list.questionItemId},
+        #{list.status},
+        #{list.userOptionId},
+        #{list.rightOptionId},
+        #{list.createDate},
+        #{list.updateDate},
+        #{list.sort}
+        )
+        </foreach>
+    </insert>
+    <select id="findRecordList" resultMap="infoMap">
+        SELECT
+        record.id as id,
+        record.question_id,
+        record.structure_id,
+        record.question_num,
+        question.name AS questionName,
+        record.question_type,
+        record.is_finish,
+        record.create_date,
+        record.difficulty_level
+        FROM tb_question_record record
+        INNER JOIN tb_question question ON record.question_id = question.id
+        INNER JOIN tb_paper_structure structure ON structure.id = record.structure_id and structure.del_flag = 0
+        where record.user_id = #{userId} AND record.section_code = #{sectionCode} AND record.type = 1 AND record.del_flag=0
+        order by record.create_date desc
+    </select>
+    <select id="getRecordCount" resultType="int">
+        SELECT COUNT(1) FROM tb_question_record record INNER JOIN tb_paper_structure structure ON structure.id = record.structure_id and structure.del_flag = 0 WHERE record.section_code = #{sectionCode} AND record.user_id = #{userId} AND record.type = 1
+    </select>
+    <select id="getReportInfo" resultType="cn.sparke.special.modules.v1.report.bean.QuestionReportBean">
+        SELECT
+        report.id,
+        report.right_num,
+        report.total_num
+        FROM tb_question_report report
+        INNER JOIN tb_paper_structure structure ON report.paper_structure_id = structure.id AND structure.del_flag = 0
+        INNER JOIN tb_question_report_record reort_record ON reort_record.report_id = report.id
+        WHERE reort_record.record_id = #{recordId} AND report.catalog_type = 1
+    </select>
+    <resultMap id="infoMap" type="cn.sparke.special.modules.v1.record.bean.QuestionRecordBean">
+        <id property="id" column="id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="structureId" column="structure_id"/>
+        <result property="questionNum" column="question_num"/>
+        <result property="questionName" column="questionName"/>
+        <result property="questionType" column="question_type"/>
+        <result property="isFinish" column="is_finish"/>
+        <result property="createDate" column="create_date"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <association property="reportInfo" javaType="cn.sparke.special.modules.v1.report.bean.QuestionReportBean" column="{recordId=id}" select="getReportInfo">
+            <id property="id" column="id" jdbcType="String"/>
+            <result property="rightNum" column="right_num" jdbcType="int"/>
+            <result property="totalNum" column="total_num" jdbcType="int"/>
+        </association>
+    </resultMap>
+</mapper>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sparke.gift.modules.v1.estimate.mapper.TbGiftSubjectiveSubmitRecordMapper">
+    <resultMap id="BaseResultMap" type="cn.sparke.gift.modules.v1.estimate.bean.po.TbGiftSubjectiveSubmitRecord">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="user_id" jdbcType="VARCHAR" property="userId"/>
+        <result column="section_code" jdbcType="TINYINT" property="sectionCode"/>
+        <result column="paper_id" jdbcType="VARCHAR" property="paperId"/>
+        <result column="code_id" jdbcType="VARCHAR" property="codeId"/>
+        <result column="code" jdbcType="INTEGER" property="code"/>
+        <result column="pre_translate_total" jdbcType="INTEGER" property="preTranslateTotal"/>
+        <result column="pre_translate_use" jdbcType="INTEGER" property="preTranslateUse"/>
+        <result column="pre_write_total" jdbcType="INTEGER" property="preWriteTotal"/>
+        <result column="pre_write_use" jdbcType="INTEGER" property="preWriteUse"/>
+        <result column="mid_translate_total" jdbcType="INTEGER" property="midTranslateTotal"/>
+        <result column="mid_translate_use" jdbcType="INTEGER" property="midTranslateUse"/>
+        <result column="mid_write_total" jdbcType="INTEGER" property="midWriteTotal"/>
+        <result column="mid_write_use" jdbcType="INTEGER" property="midWriteUse"/>
+        <result column="post_translate_total" jdbcType="INTEGER" property="postTranslateTotal"/>
+        <result column="post_translate_use" jdbcType="INTEGER" property="postTranslateUse"/>
+        <result column="post_write_total" jdbcType="INTEGER" property="postWriteTotal"/>
+        <result column="post_write_use" jdbcType="INTEGER" property="postWriteUse"/>
+        <result column="create_date" jdbcType="TIMESTAMP" property="createDate"/>
+        <result column="create_by" jdbcType="VARCHAR" property="createBy"/>
+        <result column="update_date" jdbcType="TIMESTAMP" property="updateDate"/>
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+        <result column="sort" jdbcType="INTEGER" property="sort"/>
+        <result column="del_flag" jdbcType="TINYINT" property="delFlag"/>
+    </resultMap>
+
+    <update id="updatePreUse">
+        UPDATE tb_gift_subjective_submit_record
+        SET pre_translate_use = pre_translate_use + 1, pre_write_use = pre_write_use + 1
+        WHERE user_id = #{userId} AND del_flag = 0 AND section_code = #{sectionCode}
+    </update>
+    <update id="updateMidUse">
+        UPDATE tb_gift_subjective_submit_record
+        SET mid_translate_use = mid_translate_use + 1, mid_write_use = mid_write_use + 1
+        WHERE user_id = #{userId} AND del_flag = 0 AND section_code = #{sectionCode}
+    </update>
+    <update id="updatePostUse">
+        UPDATE tb_gift_subjective_submit_record
+        SET post_translate_use = post_translate_use + 1, post_write_use = post_write_use + 1
+        WHERE user_id = #{userId} AND del_flag = 0 AND section_code = #{sectionCode}
+    </update>
+
+    <select id="getByUserIdAndSectionCode" resultMap="BaseResultMap">
+        SELECT *
+        FROM tb_gift_subjective_submit_record
+        WHERE user_id = #{userId} AND del_flag = 0 AND section_code = #{sectionCode}
+    </select>
+</mapper>

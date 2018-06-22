@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.base.modules.v1.fragment.mapper.VersionMapper">
+    <select id="get" resultType="cn.sparke.base.modules.v1.fragment.bean.VersionBean">
+        SELECT
+            title,
+            code,
+            version,
+            summary,
+            download_url,
+            is_force
+        FROM tb_version
+        WHERE del_flag = 0
+              AND type = #{type}
+        ORDER BY code DESC
+        LIMIT 1
+    </select>
+    <select id="getPassVerify" resultType="int">
+        SELECT ifnull(MAX(pass_verify), 1)
+        FROM tb_version
+        WHERE del_flag = 0
+              AND type = #{type}
+              AND code = #{code}
+        ORDER BY create_date DESC
+        LIMIT 1
+    </select>
+</mapper>

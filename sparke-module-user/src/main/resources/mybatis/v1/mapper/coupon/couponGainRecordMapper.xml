@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.coupons.mapper.CouponGainRecordMapper">
+    <!--根据请求领取的优惠券规则获取已领取的id-->
+    <select id="existGainRuleList" resultType="string">
+        SELECT rule_id
+        FROM tb_coupon_gain_record
+        WHERE user_id = #{userId}
+        AND rule_id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </select>
+
+
+    <insert id="batchInsertGainRecord">
+        INSERT INTO tb_coupon_gain_record (id, user_id, coupon_id, gain_scene_id, rule_id, create_date)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.id},
+            #{item.userId},
+            #{item.couponId},
+            #{item.gainSceneId},
+            #{item.ruleId},
+            #{item.createDate}
+            )
+        </foreach>
+
+    </insert>
+</mapper>

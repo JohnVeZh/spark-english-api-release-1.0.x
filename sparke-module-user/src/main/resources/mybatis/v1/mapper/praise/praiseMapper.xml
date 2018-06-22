@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.praise.mapper.PraiseMapper">
+    <insert id="insert">
+        INSERT INTO tb_user_praise (id, user_id, content_type, content_id, create_date) VALUES
+            (
+                #{id},
+                #{userId},
+                #{contentType},
+                #{contentId},
+                #{createDate}
+            )
+    </insert>
+    <delete id="cancelPraise">
+        DELETE FROM tb_user_praise
+        WHERE user_id = #{userId}
+              AND content_id = #{contentId}
+    </delete>
+
+    <select id="existPraise" resultType="cn.sparke.user.modules.v1.praise.bean.PraiseBean">
+        SELECT
+            id,
+            content_id,
+            content_type
+        FROM tb_user_praise
+        WHERE user_id = #{userId}
+              AND content_id = #{contentId}
+        LIMIT 1
+    </select>
+    <update id="addCommentPraiseNum">
+        UPDATE tb_user_comment
+        SET praise_num = praise_num + #{num}
+        WHERE id = #{contentId}
+    </update>
+    <update id="addActivityPraiseNum">
+        UPDATE tb_community_activity
+        SET like_num = like_num + #{num}
+        WHERE id = #{contentId}
+    </update>
+</mapper>

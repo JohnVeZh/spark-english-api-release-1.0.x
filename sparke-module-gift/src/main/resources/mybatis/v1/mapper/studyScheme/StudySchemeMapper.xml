@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="cn.sparke.gift.modules.v1.studyScheme.mapper.StudySchemeMapper">
+
+    <select id="getReport" resultType="cn.sparke.gift.modules.v1.studyScheme.bean.GiftReportBean">
+        SELECT
+            id,
+            section_code,
+            period,
+            user_id,
+            is_skip,
+            teacher_evaluate_status,
+            total_score,
+            listen_total_count,
+            listen_right_count,
+            score_listen,
+            read_total_count,
+            read_right_count,
+            score_read,
+            score_translate,
+            score_write,
+            create_date
+        FROM
+            tb_gift_report
+        WHERE
+            del_flag = 0 AND
+            section_code = #{sectionCode} AND
+            user_id = #{userId} AND
+            period = #{period}
+        ORDER BY
+            period ASC,
+            update_date DESC
+        LIMIT 1
+    </select>
+
+    <select id="getPlanConfig" resultType="cn.sparke.gift.modules.v1.studyScheme.bean.GiftPlanConfigBean">
+        SELECT
+            id,
+            section_code,
+            period,
+            title,
+            score_start,
+            score_end,
+            `comment`,
+            content,
+            create_date
+        FROM
+            tb_gift_plan_config
+        WHERE
+            del_flag = 0 AND
+            section_code = #{sectionCode} AND
+            score_start &lt; #{totalScore} AND
+            score_end &gt;= #{totalScore}
+        LIMIT 1
+    </select>
+
+    <select id="getRecommendCourseList" resultType="cn.sparke.gift.modules.v1.studyScheme.bean.RecommendCourseBean">
+        SELECT
+            tpnc.id,
+            tpnc.product_id,
+            tp.name,
+            tpnc.catalog_number,
+            tp.present_price,
+            tp.original_price,
+            tp.list_img,
+            tp.cover_img,
+            tpnc.start_time,
+            tpnc.end_time,
+            tp.sale_num
+        FROM
+            tb_gift_plan_network_course AS tgpnc
+            LEFT JOIN tb_product_network_course AS tpnc ON tpnc.id = tgpnc.network_course_id
+            LEFT JOIN tb_product AS tp ON tp.id = tpnc.product_id
+        WHERE
+            tgpnc.del_flag = 0 AND
+            tgpnc.plan_id = #{schemeId}
+        ORDER BY
+            tgpnc.sort ASC,
+            tgpnc.update_date DESC
+    </select>
+
+    <!--根据学段获取学习方案列表-->
+    <select id="queryPlanListBySectionCode" resultType="cn.sparke.gift.modules.v1.studyScheme.bean.LearningProgram">
+        SELECT config.id AS id,config.title AS title
+        FROM  tb_gift_plan_config config
+        WHERE config.del_flag=0 AND config.section_code=#{sectionCode,jdbcType=TINYINT}
+        ORDER BY config.sort DESC,config.score_start DESC
+    </select>
+    <!--获取学习方案详情以及推荐课程-->
+    <select id="queryPlanInfoWithRecommendCourse" resultType="cn.sparke.gift.modules.v1.studyScheme.bean.CourseInfo">
+        SELECT config.id AS id,config.content AS content,course.network_course_id AS networkCourseId,product.name AS networkCourseName
+        FROM tb_gift_plan_config config LEFT JOIN tb_gift_plan_network_course course
+            ON config.id=course.plan_id AND course.del_flag=0
+          LEFT JOIN tb_product_network_course network
+            ON course.network_course_id=network.id
+          LEFT JOIN tb_product product
+            ON network.product_id=product.id
+        WHERE config.id=#{planId,jdbcType=VARCHAR}
+        ORDER BY course.sort ASC
+    </select>
+    <insert id="insertScheme">
+      INSERT INTO tb_gift_report
+      SELECT #{report.id,jdbcType=VARCHAR},
+            #{report.sectionCode,jdbcType=TINYINT},
+            plan.period,
+            paper.id,
+            #{report.userId,jdbcType=VARCHAR},
+            #{report.isSkip,jdbcType=TINYINT},
+            #{report.teacherEvaluateStatus,jdbcType=TINYINT},
+            plan.score_end,
+            #{report.scoreListen,jdbcType=INTEGER},
+            #{report.scoreRead,jdbcType=INTEGER},
+            #{report.scoreTranslate,jdbcType=INTEGER},
+            #{report.scoreWrite,jdbcType=INTEGER},
+            #{report.listenTotalCount,jdbcType=INTEGER},
+            #{report.listenRightCount,jdbcType=INTEGER},
+            #{report.readTotalCount,jdbcType=INTEGER},
+            #{report.readRightCount,jdbcType=INTEGER},
+            #{report.create_date,jdbcType=DATE},
+            #{report.userId,jdbcType=VARCHAR},
+            #{report.updateDate,jdbcType=DATE},
+            #{report.userId,jdbcType=VARCHAR},
+            #{report.remarks,jdbcType=VARCHAR},
+            #{report.sort,jdbcType=INTEGER},
+            #{report.delFlag,jdbcType=TINYINT}
+      FROM tb_gift_plan_config plan LEFT JOIN tb_gift_period_paper paper
+      ON plan.section_code=paper.section_code AND plan.period=paper.period AND paper.del_flag=0
+      WHERE plan.id=#{schemeId,jdbcType=VARCHAR}
+      AND NOT EXISTS(
+        SELECT 1 FROM tb_gift_report r
+        WHERE r.section_code=#{report.sectionCode,jdbcType=TINYINT}
+        AND r.period=1
+        AND r.user_id=#{report.userId,jdbcType=VARCHAR}
+      )
+    </insert>
+</mapper>

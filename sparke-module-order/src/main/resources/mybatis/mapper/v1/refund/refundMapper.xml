@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.order.modules.v1.order.mapper.RefundMapper">
+    <insert id="insert">
+        INSERT INTO tb_order_refund (id, order_id, order_code, order_detail_id, user_id, reason, money, type, user_receive_status, imgs, create_date, update_date)
+        VALUES
+            (
+                #{id},
+                #{orderId},
+                #{orderCode},
+                #{orderDetailId},
+                #{userId},
+                #{reason},
+                #{money},
+                #{type},
+                #{userReceiveStatus},
+                #{imgs},
+                #{createDate},
+                #{updateDate}
+            )
+    </insert>
+    <!--根据用户和订单详情表id获取订单以及订单详情信息-->
+    <select id="getOrderDetailByUser" resultType="cn.sparke.order.modules.v1.order.entity.OrderDetailsEntity">
+        SELECT
+            od.*,
+            o.id         AS orderId,
+            o.order_code AS orderCode
+        FROM tb_order_details od
+            INNER JOIN tb_order o
+                ON od.order_id = o.id
+        WHERE od.id = #{orderDetailId}
+              AND o.is_user_del = 0
+              AND o.is_admin_del = 0
+              AND o.user_id = #{userId}
+              AND od.refund_status IN (0, 2)
+              AND o.order_status NOT IN (1, 6)
+    </select>
+    <!--关闭用户对网课的拥有状态-->
+    <update id="updateUserNetworkDisabled">
+        UPDATE tb_user_network_course uc, tb_product_network_course nc
+        SET uc.status = 0
+        WHERE uc.network_course_id = nc.id
+              AND nc.product_id = #{productId}
+    </update>
+    <select id="refundInfo" resultType="cn.sparke.order.modules.v1.order.bean.RefundBean">
+        SELECT *
+        FROM tb_order_refund
+        WHERE order_detail_id = #{orderDetailId}
+    </select>
+
+    <select id="findOrderDetailCollectionList"
+            resultType="cn.sparke.order.modules.v1.order.entity.OrderDetailsCollection">
+        SELECT
+            product_id,
+            product_price,
+            product_name,
+            product_img
+        FROM tb_order_details_collection collection
+        WHERE order_detail_id = #{orderDetailId}
+              AND del_flag = 0
+    </select>
+    <!--获取网课下的视频总数-->
+    <select id="findNetworkCourseVideoNum" resultType="int">
+        SELECT count(1)
+        FROM tb_product_network_course_video video
+            INNER JOIN tb_product_network_course course
+                ON video.network_course_id = course.id
+        WHERE course.product_id = #{id}
+              AND video.del_flag = 0
+    </select>
+    <!--获取已经播放的视频数量-->
+    <select id="findVideoAlreadyPlayNum" resultType="int">
+        SELECT count(1)
+        FROM tb_product_network_course_video_playlog video_playlog
+            INNER JOIN tb_product_network_course course
+                ON video_playlog.network_course_id = course.id
+        WHERE course.product_id = #{id}
+    </select>
+</mapper>

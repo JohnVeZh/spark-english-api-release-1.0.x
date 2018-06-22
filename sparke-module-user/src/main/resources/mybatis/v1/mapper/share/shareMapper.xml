@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.share.mapper.ShareMapper">
+    <insert id="insert">
+        INSERT INTO tb_user_share (id, user_id, content, create_date) VALUES
+            (
+                #{id},
+                #{userId},
+                #{content},
+                #{createDate}
+            )
+    </insert>
+    <select id="getById" resultType="cn.sparke.user.modules.v1.share.bean.ShareBean">
+        SELECT *
+        FROM tb_user_share
+        WHERE id = #{id}
+    </select>
+</mapper>

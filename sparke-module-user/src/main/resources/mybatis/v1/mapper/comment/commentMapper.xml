@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.comments.mapper.CommentMapper">
+    <resultMap id="commentReplyList" type="cn.sparke.user.modules.v1.comments.bean.CommentBean">
+        <id property="id" column="id"></id>
+        <result property="praiseNum" column="praise_num"></result>
+        <result property="nickname" column="nickname"></result>
+        <result property="headerImg" column="header_img"></result>
+        <result property="userId" column="userId"></result>
+        <result property="content" column="content"></result>
+        <result property="replyNum" column="reply_num"></result>
+        <result property="imgs" column="imgs"></result>
+        <result property="isPraise" column="isPraise"></result>
+        <result property="createDate" column="create_date"></result>
+        <collection property="replyList" ofType="cn.sparke.user.modules.v1.comments.bean.CommentReplyBean">
+            <id property="id" column="reply_id"></id>
+            <result property="commentId" column="comment_id"></result>
+            <result property="content" column="reply_content"></result>
+            <result property="nickname" column="reply_nickname"></result>
+            <result property="headerImg" column="reply_header_img"></result>
+            <result property="userId" column="reply_userId"></result>
+            <result property="createDate" column="reply_create_date"></result>
+        </collection>
+    </resultMap>
+    <select id="findNetWorkReplyList" resultMap="commentReplyList">
+        SELECT
+        com.id,
+        com.praise_num,
+        u.nickname,
+        u.header_img,
+        u.id AS userId,
+        com.content,
+        com.reply_num,
+        com.imgs,
+        com.create_date,
+        <if test="loginUserId!=null">
+            ifnull(
+            (
+            select 1 from tb_user_praise praise
+            WHERE
+            praise.content_type = 1
+            AND praise.user_id = #{loginUserId}
+            AND praise.content_id = com.id
+            LIMIT 1
+            ),0
+            )as isPraise,
+        </if>
+        reply.id AS reply_id,
+        reply.comment_id,
+        reply.content AS reply_content,
+        ru.nickname AS reply_nickname,
+        ru.header_img AS reply_header_img,
+        ru.id AS reply_userId,
+        reply.create_date AS reply_create_date
+        FROM
+        tb_user_comment com
+        LEFT JOIN tb_user u ON com.user_id = u.id
+        LEFT JOIN tb_user_comment_reply reply ON com.id = reply.comment_id
+        LEFT JOIN tb_user ru ON reply.user_id = ru.id
+        WHERE
+        com.del_flag = 0
+        AND com.content_type = #{contentType}
+        AND com.content_id = #{contentId}
+        AND u.del_flag = 0
+        AND u.user_status = 0
+        ORDER BY
+        com.is_top DESC,
+        com.create_date DESC
+    </select>
+    <select id="findList" resultType="cn.sparke.user.modules.v1.comments.bean.CommentBean">
+        SELECT
+        com.id,
+        com.praise_num,
+        u.nickname,
+        u.header_img,
+        u.id AS userId,
+        com.content,
+        com.reply_num,
+        com.imgs,
+        <if test="loginUserId!=null">
+            ifnull(
+            (
+            select 1 from tb_user_praise praise
+            WHERE
+            praise.content_type = 1
+            AND praise.user_id = #{loginUserId}
+            AND praise.content_id = com.id
+            LIMIT 1
+            ),0
+            )as isPraise,
+        </if>
+        com.create_date
+        FROM tb_user_comment com
+        INNER JOIN tb_user u
+        ON com.user_id = u.id
+        WHERE com.del_flag = 0
+        AND com.content_type = #{contentType}
+        AND com.content_id = #{contentId}
+        AND u.del_flag = 0
+        AND u.user_status = 0
+        ORDER BY com.is_top DESC , com.create_date DESC
+    </select>
+
+    <insert id="insert">
+        INSERT INTO tb_user_comment (id, user_id, content_type, content_id, content, imgs, create_date, update_date)
+        VALUES
+            (
+                #{id},
+                #{userId},
+                #{contentType},
+                #{contentId},
+                #{content},
+                #{imgs},
+                #{createDate},
+                #{updateDate}
+            )
+    </insert>
+
+    <insert id="insertReply">
+        INSERT INTO tb_user_comment_reply (id, comment_id, user_id, target_user_id, content, create_date)
+        VALUES
+            (
+                #{id},
+                #{commentId},
+                #{userId},
+                #{targetUserId},
+                #{content},
+                #{createDate}
+            )
+    </insert>
+    <select id="findReplyList" resultType="cn.sparke.user.modules.v1.comments.bean.CommentReplyBean">
+        SELECT
+            reply.id,
+            reply.comment_id,
+            reply.content,
+            u.nickname,
+            u.header_img,
+            u.id AS userId,
+            reply.create_date
+        FROM tb_user_comment_reply reply
+            INNER JOIN tb_user u
+                ON reply.user_id = u.id
+        WHERE reply.del_flag = 0
+              AND u.del_flag = 0
+              AND u.user_status = 0
+              AND reply.comment_id = #{commentId}
+        ORDER BY reply.create_date DESC
+    </select>
+    <!--是否拥有网课-->
+    <select id="hasNetwork" resultType="string">
+        SELECT 1
+        FROM tb_user_network_course
+        WHERE del_flag = 0
+              AND status = 1
+              AND user_id = #{userId}
+              AND network_course_id = #{contentId}
+        LIMIT 1
+    </select>
+    <!--是否拥有网课-->
+    <select id="isFreeNetWork" resultType="java.lang.Integer">
+        SELECT tpnc.is_free
+        FROM tb_product_network_course tpnc
+        WHERE
+            tpnc.id = #{contentId}
+    </select>
+    <!--增加网课评论数-->
+    <update id="addNetworkCommentNum">
+        UPDATE tb_product_network_course
+        SET comment_num = comment_num + 1
+        WHERE id = #{id}
+    </update>
+    <!--增加资讯评论数-->
+    <update id="addNewsCommentNum">
+        UPDATE tb_community_news
+        SET comment_num = comment_num + 1
+        WHERE id = #{id}
+    </update>
+    <!--增加活动评论数-->
+    <update id="addActivityCommentNum">
+        UPDATE tb_community_activity
+        SET comment_num = comment_num + 1
+        WHERE id = #{id}
+    </update>
+    <!--增加评论数量-->
+    <update id="addCommentReplyNum">
+        UPDATE tb_user_comment
+        SET reply_num = reply_num + 1
+        WHERE id = #{id}
+    </update>
+    <select id="getContentIdByCommentId" resultType="string">
+        SELECT content_id
+        FROM tb_user_comment
+        WHERE del_flag = 0
+              AND id = #{id}
+    </select>
+    <update id="subtractActivityCommentNum">
+        UPDATE tb_community_activity
+        SET comment_num = comment_num - 1
+        WHERE id = #{id}
+    </update>
+    <update id="delete">
+        UPDATE tb_user_comment
+        SET del_flag = 1
+        WHERE id = #{id}
+    </update>
+    <select id="get" resultType="cn.sparke.user.modules.v1.comments.bean.CommentBean">
+        SELECT *
+        FROM tb_user_comment
+        WHERE id = #{id}
+              AND user_id = #{userId}
+              AND del_flag = 0
+    </select>
+</mapper>

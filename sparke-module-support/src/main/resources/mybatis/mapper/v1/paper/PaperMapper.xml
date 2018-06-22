@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.caption.mapper.PaperMapper">
+
+    <resultMap id="findListMap" type="cn.sparke.support.modules.v1.caption.bean.vo.PaperCatalog">
+        <id column="catalogId" property="id"/>
+        <result column="name" property="name"/>
+        <collection property="paperList" ofType="cn.sparke.support.modules.v1.caption.bean.vo.PaperItem">
+            <id column="paperId" property="id"/>
+            <result column="img" property="img"/>
+        </collection>
+    </resultMap>
+
+    <select id="findPaperGroupCatalog" resultMap="findListMap">
+      SELECT
+          tpc.id AS catalogId,
+          tpc.name,
+          tpg.id AS paperId,
+          tpg.img
+        FROM tb_paper_catalog tpc
+            LEFT JOIN tb_paper_group tpg ON tpg.catalog_id = tpc.id AND tpg.del_flag = 0
+            LEFT JOIN tb_paper_group_relation tpgr on tpgr.group_id = tpg.id AND tpgr.del_flag = 0
+        LEFT JOIN tb_paper tp ON tp.id = tpgr.paper_id AND tp.del_flag = 0
+      WHERE tpc.type = #{paperCatalogType} and tpc.section_code = #{sectionCode} and tpc.del_flag = 0
+      order by tpc.sort,tpg.sort,tpgr.sort,tp.sort
+    </select>
+    <select id="findPaperByCatalog"  resultMap="findListMap">
+        SELECT
+            tpc.id AS catalogId,
+            tpc.name,
+            tp.id AS paperId,
+            tp.img
+        FROM tb_paper_catalog tpc
+        LEFT JOIN tb_paper tp ON tp.catalog_id = tpc.id AND tp.del_flag = 0
+        WHERE tpc.type = #{paperCatalogType} and tpc.section_code = #{sectionCode} and tpc.del_flag = 0
+        order by tpc.sort,tp.sort
+    </select>
+</mapper>

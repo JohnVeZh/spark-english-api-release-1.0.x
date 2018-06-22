@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sparke.gift.modules.v1.estimate.mapper.TbGiftReportMapper">
+    <resultMap id="BaseResultMap" type="cn.sparke.gift.modules.v1.estimate.bean.po.TbGiftReport">
+        <id column="id" jdbcType="VARCHAR" property="id" />
+        <result column="section_code" jdbcType="TINYINT" property="sectionCode" />
+        <result column="period" jdbcType="TINYINT" property="period" />
+        <result column="paperId" jdbcType="VARCHAR" property="paperId" />
+        <result column="user_id" jdbcType="VARCHAR" property="userId" />
+        <result column="is_skip" jdbcType="TINYINT" property="isSkip" />
+        <result column="teacher_evaluate_status" jdbcType="TINYINT" property="teacherEvaluateStatus" />
+        <result column="total_score" jdbcType="INTEGER" property="totalScore" />
+        <result column="score_listen" jdbcType="INTEGER" property="scoreListen" />
+        <result column="score_read" jdbcType="INTEGER" property="scoreRead" />
+        <result column="score_translate" jdbcType="INTEGER" property="scoreTranslate" />
+        <result column="score_write" jdbcType="INTEGER" property="scoreWrite" />
+        <result column="listen_total_count" jdbcType="INTEGER" property="listenTotalCount" />
+        <result column="listen_right_count" jdbcType="INTEGER" property="listenRightCount" />
+        <result column="read_total_count" jdbcType="INTEGER" property="readTotalCount" />
+        <result column="read_right_count" jdbcType="INTEGER" property="readRightCount" />
+        <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+        <result column="create_by" jdbcType="VARCHAR" property="createBy" />
+        <result column="update_date" jdbcType="TIMESTAMP" property="updateDate" />
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+        <result column="remarks" jdbcType="VARCHAR" property="remarks" />
+        <result column="sort" jdbcType="INTEGER" property="sort" />
+        <result column="del_flag" jdbcType="TINYINT" property="delFlag" />
+    </resultMap>
+    <insert id="insert">
+        insert into tb_gift_report (id,section_code, period,paper_id, user_id,
+                                    is_skip, teacher_evaluate_status, total_score,
+                                    score_listen, score_read, score_translate,
+                                    score_write, listen_total_count, listen_right_count,
+                                    read_total_count, read_right_count, create_date,
+                                    create_by, update_date, update_by,
+                                    remarks, sort, del_flag
+        )
+        values (#{id,jdbcType=VARCHAR},#{sectionCode,jdbcType=TINYINT}, #{period,jdbcType=TINYINT}, #{paperId,jdbcType=VARCHAR},#{userId,jdbcType=VARCHAR},
+                                                 #{isSkip,jdbcType=TINYINT}, #{teacherEvaluateStatus,jdbcType=TINYINT}, #{totalScore,jdbcType=INTEGER},
+                                                 #{scoreListen,jdbcType=INTEGER}, #{scoreRead,jdbcType=INTEGER}, #{scoreTranslate,jdbcType=INTEGER},
+                                                 #{scoreWrite,jdbcType=INTEGER}, #{listenTotalCount,jdbcType=INTEGER}, #{listenRightCount,jdbcType=INTEGER},
+                                                                                                                       #{readTotalCount,jdbcType=INTEGER}, #{readRightCount,jdbcType=INTEGER}, #{createDate,jdbcType=TIMESTAMP},
+                                                                                                                       #{createBy,jdbcType=VARCHAR}, #{updateDate,jdbcType=TIMESTAMP}, #{updateBy,jdbcType=VARCHAR},
+                                                                                                                       #{remarks,jdbcType=VARCHAR}, #{sort,jdbcType=INTEGER}, #{delFlag,jdbcType=TINYINT}
+        )
+    </insert>
+    <select id="getByUserIdAndSectionCodeAndPeriod" resultMap="BaseResultMap">
+        SELECT *
+        FROM tb_gift_report
+        WHERE user_id = #{userId} and section_code = #{sectionCode} and period = #{period} and del_flag = 0
+    </select>
+</mapper>

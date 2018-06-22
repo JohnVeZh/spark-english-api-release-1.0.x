@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sparke.base.modules.v1.fragment.mapper.StartPageMapper">
+    <select id="get" resultType="cn.sparke.base.modules.v1.fragment.bean.StartImg">
+        select
+              tb_start_page.title,
+              tb_start_page.img,
+              tb_start_page.jump_type,
+              tb_start_page.url,
+              tb_start_page.content_id,
+              tb_start_page.content
+        from tb_start_page
+        where tb_start_page.del_flag = 0 AND is_show = 1 ORDER BY sort
+         limit 1
+     </select>
+
+</mapper>

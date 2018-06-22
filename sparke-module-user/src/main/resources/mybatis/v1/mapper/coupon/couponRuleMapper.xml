@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.coupons.mapper.CouponRuleMapper">
+    <!--根据场景id获取优惠券规则列表-->
+    <select id="getRuleListByContentId" resultType="cn.sparke.user.modules.v1.coupons.bean.CouponRuleBean">
+        SELECT
+            rule.id,
+            scene.id AS gainSceneId,
+            scene.product_id,
+            rule.title,
+            rule.effect_date,
+            rule.invalid_date,
+            rule.min_money,
+            rule.discount_money
+        FROM tb_coupon_gain_scene scene
+            INNER JOIN tb_coupon_rule rule
+                ON scene.rule_id = rule.id
+        WHERE scene.del_flag = 0
+              AND rule.del_flag = 0
+              AND now() &gt;= effect_date AND now() &lt;=  invalid_date
+              AND status = 1
+              AND scene.content_id = #{contentId}
+    </select>
+    <select id="getBySceneId" resultType="cn.sparke.user.modules.v1.coupons.bean.CouponRuleBean">
+        SELECT
+            rule.*,
+            gs.id AS gainSceneId,
+            gs.product_id
+        FROM tb_coupon_gain_scene gs
+            INNER JOIN tb_coupon_rule rule
+                ON gs.rule_id = rule.id
+        WHERE gs.del_flag = 0
+              AND rule.del_flag = 0
+              AND rule.status = 1
+              AND now() &gt;= rule.effect_date AND now() &lt;=  rule.invalid_date
+              AND gs.id = #{id}
+    </select>
+</mapper>

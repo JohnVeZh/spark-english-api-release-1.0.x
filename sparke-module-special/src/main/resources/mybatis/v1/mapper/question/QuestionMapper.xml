@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.question.mapper.QuestionMapper">
+    <select id="findQuestionList" resultType="cn.sparke.special.modules.v1.question.bean.QuestionBean">
+        SELECT
+        tb_question.id,
+        tb_question.name,
+        ifnull((SELECT record.is_finish
+                FROM tb_question_record record  INNER JOIN tb_paper_structure structure ON structure.id = record.structure_id and structure.del_flag = 0
+                WHERE record.question_id = tb_question.id AND record.user_id = #{userId} and record.type = 1
+                ORDER BY record.create_date DESC
+                LIMIT 1), 0) AS is_finish,
+        tb_question.type
+        FROM tb_question
+        INNER JOIN tb_paper_question
+        ON tb_question.id = tb_paper_question.question_id AND tb_paper_question.structure_id = #{structureId}
+        order by tb_paper_question.sort
+    </select>
+    <resultMap id="infoMap" type="cn.sparke.special.modules.v1.question.bean.QuestionBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="structureId" column="structure_id"/>
+        <result property="content" column="content"/>
+        <result property="type" column="type"/>
+        <result property="hasItem" column="has_item"/>
+        <result property="questionNum" column="question_num"/>
+        <result property="analysis" column="analysis"/>
+        <result property="audioUrl" column="audio_url"/>
+        <result property="tapescripts" column="tapescripts"/>
+        <result property="translation" column="translation"/>
+        <result property="reference" column="reference"/>
+        <association property="isCollect" column="{questionId=id,userId=userId}"
+                     javaType="int" select="getQuestionIsCollect"/>
+        <association property="recordInfo" javaType="cn.sparke.special.modules.v1.record.bean.QuestionRecordBean" column="{userId=userId,questionId=id}" select="getRecordInfo">
+            <id property="id" column="id"/>
+            <result property="isFinish" column="isFinish" jdbcType="int"/>
+            <result property="difficultyLevel" column="difficulty_level" jdbcType="int"/>
+            <result property="useTime" column="use_time" jdbcType="int"/>
+        </association>
+        <collection property="questionItemList" ofType="cn.sparke.special.modules.v1.question.bean.QuestionItemBean">
+            <id property="id" column="itemId"/>
+            <result property="content" column="itemContent"/>
+            <result property="analysis" column="itemAnalysis"/>
+            <association property="isCollect" column="{userId=userId,itemId=itemId}"
+                         javaType="int" select="getItemIsCollect"/>
+            <association property="userOptionId" column="{userId=userId,itemId=itemId}"
+                         javaType="string" select="getUserRecordOptionId"/>
+            <collection property="optionList" ofType="cn.sparke.special.modules.v1.question.bean.QuestionOptionBean">
+                <id property="id" column="optionId"/>
+                <result property="isAnswer" column="optionIsAnswer"/>
+                <result property="name" column="optionName"/>
+                <result property="content" column="optionContent"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="getRecordInfo" resultType="cn.sparke.special.modules.v1.record.bean.QuestionRecordBean">
+        SELECT record.id,ifnull(max(record.is_finish), 0) AS isFinish,record.difficulty_level,ifnull(record.use_time,0) AS use_time
+        FROM tb_question_record record INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+        WHERE record.user_id = #{userId} AND record.question_id = #{questionId} AND record.type = 1 AND record.del_flag = 0
+    </select>
+    <select id="getIsFinish" resultType="int">
+        SELECT ifnull(max(is_finish), 0)
+        FROM tb_question_record record INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+        WHERE record.user_id = #{userId} AND record.question_id = #{questionId} AND record.type = 1 AND record.del_flag = 0
+    </select>
+    <select id="getItemIsCollect" resultType="int">
+        SELECT if(isnull(id), 0, 1)
+        FROM tb_question_collection_detail
+        WHERE user_id = #{userId} AND question_item_id = #{itemId}
+    </select>
+    <select id="getUserRecordOptionId" resultType="java.lang.String">
+        SELECT detail.user_option_id
+        FROM tb_question_record_detail detail
+        WHERE detail.user_id = #{userId}
+              AND detail.question_item_id = #{itemId}
+              AND detail.del_flag = 0
+        ORDER BY detail.create_date
+        LIMIT 1
+    </select>
+    <select id="getUserRecordDifficultyLevel" resultType="int">
+        SELECT record.difficulty_level
+        FROM tb_question_record record INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+        WHERE record.user_id = #{userId}
+              AND record.question_id = #{questionId}
+              AND record.question_type > 2
+              AND record.type = 1
+              AND record.del_flag = 0
+    </select>
+    <select id="getQuestionIsCollect" resultType="int">
+        SELECT if(isnull(id), 0, 1)
+        FROM tb_question_collection
+        WHERE user_id = #{userId} AND question_id = #{questionId} AND type = 4
+    </select>
+    <select id="getQuestion" resultMap="infoMap">
+        SELECT
+        question.id,
+        question.`name`,
+        pQuestion.structure_id,
+        question.content,
+        question.type,
+        question.has_item,
+        question.question_num,
+        question.analysis,
+        listening.audio_url,
+        listening.tapescripts,
+        if(type = 1, listening.translation, IF(type = 2, reading.translation, NULL)) AS translation,
+        if(type = 3, translations.reference, IF(type = 4, writing.reference, NULL))  AS reference,
+        item.id AS itemId,
+        item.content AS itemContent,
+        item.analysis  AS itemAnalysis,
+        options.id AS optionId,
+        options.is_answer AS optionIsAnswer,
+        options.name AS optionName,
+        options.content AS optionContent,
+        #{userId} AS userId
+        FROM tb_question question
+        INNER JOIN tb_paper_question pQuestion
+        ON question.id = pQuestion.question_id AND pQuestion.del_flag = 0 AND question.type = #{type}
+        LEFT JOIN tb_question_listening listening ON question.id = listening.question_id AND type = 1
+        LEFT JOIN tb_question_reading reading ON question.id = reading.question_id AND type = 2
+        LEFT JOIN tb_question_translation translations ON question.id = translations.question_id AND type = 3
+        LEFT JOIN tb_question_writing writing ON question.id = writing.question_id AND type = 4
+        LEFT JOIN tb_question_item item
+        ON item.question_id = question.id AND item.del_flag = 0 AND question.has_item = 1
+        LEFT JOIN tb_question_option options ON item.id = options.item_id AND options.del_flag = 0
+        WHERE question.id = #{questionId}
+        ORDER BY pQuestion.sort, item.sort, options.sort
+    </select>
+    <select id="getNextQuestion" resultType="cn.sparke.special.modules.v1.question.bean.QuestionBean">
+        SELECT
+        q.id,
+        q.`name`,
+        q.question_num
+        FROM
+        tb_question q INNER JOIN tb_paper_question pq ON q.id = pq.question_id
+        WHERE pq.structure_id = #{structureId} AND
+        NOT EXISTS(
+        SELECT r.question_id
+        FROM tb_question_report r
+        WHERE  q.id = r.question_id
+               AND r.user_id = #{userId}
+               AND r.section_code = #{sectionCode}
+               AND r.paper_structure_id = #{structureId}
+               AND r.catalog_type = 1
+        )
+        ORDER BY pq.sort
+        LIMIT 1
+    </select>
+
+</mapper>

@@ -1,0 +1,1 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=cn.sparke.core.modules.cacheable.memcache.MemCacheConfiguration

@@ -1,0 +1,6 @@
+group 'spark-english'
+
+
+springBoot{
+    buildInfo()
+}

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.exam.mapper.report.TbQuestionWrongBookDetailMapper">
+    <insert id="insertList">
+        insert into tb_question_wrong_book_detail (id, user_id, wrong_book_id,
+                                                   question_item_id, question_id, structure_id,
+                                                   structure_alias, paper_id, record_details_id,
+                                                   create_date, update_date, sort,
+                                                   del_flag)
+        values
+            <foreach collection="questionWrongBookDetailList" item="questionWrongBookDetail" separator=" , ">
+            (#{questionWrongBookDetail.id,jdbcType=VARCHAR}, #{questionWrongBookDetail.userId,jdbcType=VARCHAR}, #{questionWrongBookDetail.wrongBookId,jdbcType=VARCHAR},
+                                        #{questionWrongBookDetail.questionItemId,jdbcType=VARCHAR}, #{questionWrongBookDetail.questionId,jdbcType=VARCHAR}, #{questionWrongBookDetail.structureId,jdbcType=VARCHAR},
+                                        #{questionWrongBookDetail.structureAlias,jdbcType=VARCHAR}, #{questionWrongBookDetail.paperId,jdbcType=VARCHAR}, #{questionWrongBookDetail.recordDetailsId,jdbcType=VARCHAR},
+                                        #{questionWrongBookDetail.createDate,jdbcType=TIMESTAMP}, #{questionWrongBookDetail.updateDate,jdbcType=TIMESTAMP}, #{questionWrongBookDetail.sort,jdbcType=INTEGER},
+                #{questionWrongBookDetail.delFlag,jdbcType=TINYINT})
+            </foreach>
+    </insert>
+
+    <select id="findItemIdByPaperIdAndUserId" resultType="java.lang.String">
+        SELECT question_item_id
+        FROM tb_question_wrong_book tqwb
+        INNER JOIN tb_question_wrong_book_detail tqwbd ON tqwbd.wrong_book_id = tqwb.id
+        WHERE tqwb.user_id = #{userId} AND tqwb.paper_id = #{paperId};
+    </select>
+</mapper>

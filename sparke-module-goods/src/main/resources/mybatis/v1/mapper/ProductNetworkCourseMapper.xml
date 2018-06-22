@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="cn.sparke.goods.modules.v1.networkCourse.mapper.ProductNetworkCourseMapper">
+
+    <select id="findList" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseBean">
+        SELECT
+            tpnc.id,
+            tp.id                   AS productId,
+            tp.name,
+            tp.brief,
+            tp.content,
+            tpnc.course_type        AS courseType,
+            tp.list_img             AS listImg,
+            tp.cover_img            AS coverImg,
+            tp.sale_num             AS saleNum,
+            tp.original_price       AS originalPrice,
+            tp.present_price        AS presentPrice,
+            tp.is_promotion         AS isPromotion,
+            tp.is_postage           AS isPostage,
+            tpnc.catalog_number     AS catalogNumber,
+            tpnc.teacher_names      AS teacherNames,
+            tpnc.is_live            AS isLive,
+            tpnc.is_free            AS isFree,
+            tpnc.is_limit_free      AS isLimitFree,
+            tpnc.is_famous_teacher  AS isFamousTeacher,
+            tpnc.status,
+            tpnc.limit_number       AS limitNumber,
+            tp.create_date          AS createDate,
+            tpnc.start_time         AS startTime,
+            tpnc.end_time           AS endTime,
+            tpnc.reserve_start_time AS reserveStartTime,
+            tpnc.reserve_number     AS reserveNumber,
+            tpnc.receive_number     AS receiveNumber,
+            tpnc.sale_start_time    AS saleStartTime,
+            tpnc.sale_end_time      AS saleEndTime,
+            tpnc.shelf_on_time      AS shelfOnTime,
+            tpnc.shelf_off_time     AS shelfOffTime,
+            tpnc.limit_start_time   AS limitStartTime,
+            tpnc.limit_end_time     AS limitEndTime,
+            tpnc.preview_cc_id      AS previewCcId,
+            tunc.`type`             AS obtainType,
+            tunc.status             AS obtainStatus
+        FROM
+            tb_product_network_course AS tpnc
+            LEFT JOIN tb_product AS tp ON tp.id = tpnc.product_id AND tp.type = 1 AND tp.del_flag = 0 AND tp.is_show = 1
+            LEFT JOIN tb_user_network_course AS tunc
+                ON tunc.network_course_id = tpnc.id AND tunc.user_id = #{userId} AND tunc.del_flag = 0
+        WHERE
+            tp.del_flag = 0 AND
+            tp.section_code = #{sectionCode} AND
+            tpnc.course_type = #{courseType} AND
+            tpnc.is_famous_teacher = 0 AND
+            tpnc.status IN (1, 2, 3) AND
+            tpnc.shelf_off_time > now()
+        ORDER BY tp.sort ASC, tp.create_date DESC
+    </select>
+
+    <select id="findWebList" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseBean">
+        SELECT
+            tpnc.id,
+            tp.id AS productId,
+            tp.name,
+            tp.brief,
+            tp.content,
+            tpnc.course_type AS courseType,
+            tp.list_img AS listImg,
+            tp.cover_img AS coverImg,
+            tp.sale_num AS saleNum,
+            tp.original_price AS originalPrice,
+            tp.present_price AS presentPrice,
+            tp.is_promotion AS isPromotion,
+            tp.is_postage AS isPostage,
+            tpnc.catalog_number AS catalogNumber,
+            tpnc.teacher_names AS teacherNames,
+            tpnc.is_live AS isLive,
+            tpnc.is_free AS isFree,
+            tpnc.is_limit_free AS isLimitFree,
+            tpnc.is_famous_teacher AS isFamousTeacher,
+            tpnc.status,
+            tpnc.limit_number AS limitNumber,
+            tp.create_date AS createDate,
+            tpnc.start_time AS startTime,
+            tpnc.end_time AS endTime,
+            tpnc.reserve_start_time AS reserveStartTime,
+            tpnc.reserve_number AS reserveNumber,
+            tpnc.receive_number AS receiveNumber,
+            tpnc.sale_start_time AS saleStartTime,
+            tpnc.sale_end_time AS saleEndTime,
+            tpnc.shelf_on_time AS shelfOnTime,
+            tpnc.shelf_off_time AS shelfOffTime,
+            tpnc.limit_start_time AS limitStartTime,
+            tpnc.limit_end_time AS limitEndTime,
+            tpnc.preview_cc_id AS previewCcId,
+            tunc.`type` AS obtainType,
+            tunc.status AS obtainStatus
+        FROM
+            tb_product_network_course AS tpnc
+            LEFT JOIN tb_product AS tp ON tp.id = tpnc.product_id AND tp.type = 1
+            LEFT JOIN tb_user_network_course AS tunc ON tunc.network_course_id = tpnc.id AND tunc.user_id = #{userId} AND tunc.del_flag = 0
+        WHERE
+        <choose>
+            <when test="searchType != null and searchType == '0'.toString()">
+                tpnc.is_live = 0 AND tpnc.is_famous_teacher = 0 AND (CASE tunc.`type` WHEN 6 THEN 1=1 ELSE tpnc.status IN (1, 2, 3) END) AND
+            </when>
+            <when test="searchType != null and searchType == '1'.toString()">
+                tpnc.is_live = 1 AND tpnc.is_famous_teacher = 0 AND (CASE tunc.`type` WHEN 6 THEN 1=1 ELSE tpnc.status IN (1, 2, 3) END) AND
+            </when>
+            <when test="searchType != null and searchType == '2'.toString()">
+                tpnc.is_famous_teacher = 1 AND
+            </when>
+            <when test="searchType != null">
+                ((tpnc.is_famous_teacher = 0 AND tpnc.shelf_off_time > now() AND (CASE tunc.`type` WHEN 6 THEN 1=1 ELSE tpnc.status IN (1, 2, 3) END)) OR tpnc.is_famous_teacher = 1) AND
+            </when>
+        </choose>
+        <if test="isFree != null and isFree !=''">tpnc.is_free = #{isFree} AND</if>
+        <if test="sectionCode != null and sectionCode !=''">tp.section_code = #{sectionCode} AND</if>
+        tp.del_flag = 0 AND
+        tp.is_show = 1
+        ORDER BY tp.sort ASC, tp.create_date DESC
+    </select>
+
+    <select id="getById" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseBean">
+        SELECT
+            tpnc.id,
+            tp.id                   AS productId,
+            tp.name,
+            tp.brief,
+            tp.content,
+            tp.section_code,
+            tp.cover_img            AS coverImg,
+            tp.content_imgs         AS contentImgs,
+            tp.original_price       AS originalPrice,
+            tp.present_price        AS presentPrice,
+            tp.sale_num             AS saleNum,
+            tpnc.course_type        AS courseType,
+            tpnc.comment_num        AS commentNum,
+            tp.is_send              AS isSend,
+            tp.is_postage           AS isPostage,
+            tp.is_promotion         AS isPromotion,
+            tp.postage,
+            tpnc.catalog_number     AS catalogNumber,
+            tpnc.teacher_names      AS teacherNames,
+            tpnc.is_live            AS isLive,
+            tpnc.is_free            AS isFree,
+            tpnc.is_limit_free      AS isLimitFree,
+            tpnc.is_famous_teacher  AS isFamousTeacher,
+            tpnc.has_catalog        AS hasCatalog,
+            tpnc.status,
+            tpnc.limit_number       AS limitNumber,
+            tp.create_date          AS createDate,
+            tpnc.start_time         AS startTime,
+            tpnc.end_time           AS endTime,
+            tpnc.reserve_start_time AS reserveStartTime,
+            tpnc.reserve_number     AS reserveNumber,
+            tpnc.receive_number     AS receiveNumber,
+            tpnc.sale_start_time    AS saleStartTime,
+            tpnc.sale_end_time      AS saleEndTime,
+            tpnc.shelf_on_time      AS shelfOnTime,
+            tpnc.shelf_off_time     AS shelfOffTime,
+            tpnc.limit_start_time   AS limitStartTime,
+            tpnc.limit_end_time     AS limitEndTime,
+            tpnc.qq_group_no        AS qqGroupNo,
+            tpnc.preview_cc_id      AS previewCcId,
+            tpnc.live_room_id       AS liveRoomId,
+            tunc.`type`             AS obtainType,
+            tunc.status             AS obtainStatus,
+            (SELECT COUNT(1) FROM tb_product_network_course_video_playlog AS tpncvp WHERE tpncvp.network_course_id = tpnc.id) AS learnedVideos,
+            (SELECT COUNT(1) FROM tb_product_network_course_video AS tpncv WHERE tpncv.network_course_id = tpnc.id AND tpncv.del_flag = 0) AS sumVideos
+        FROM
+            tb_product_network_course AS tpnc
+            LEFT JOIN tb_product AS tp ON tp.id = tpnc.product_id AND tp.type = 1
+            LEFT JOIN tb_user_network_course AS tunc
+                ON tunc.network_course_id = tpnc.id AND tunc.user_id = #{userId} AND tunc.del_flag = 0
+        WHERE tpnc.id = #{courseId}
+        LIMIT 1
+    </select>
+
+    <select id="getCatalogsList"
+            resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseCatalogBean">
+        SELECT
+            id,
+            `name`
+        FROM tb_product_network_course_catalog
+        WHERE del_flag = 0 AND network_course_id = #{courseId}
+        ORDER BY sort ASC, create_date DESC
+    </select>
+
+
+    <select id="getVideosList" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseVideoBean">
+        SELECT
+        tpncv.id,
+        tpncv.name,
+        tpncv.`type`,
+        tpncv.cover_img AS coverImg,
+        tpncv.start_time AS startTime,
+        tpncv.duration,
+        tpncv.`size`,
+        tpnct.name AS teacherName,
+            tpncv.video_cc_id AS videoCcId,
+            tpncv.live_cc_id AS liveCcId,
+            tpncv.live_room_id AS liveRoomId,
+        tpncv.preview_cc_id AS previewCcId
+#         tpncv.video_url AS videoUrl
+        FROM tb_product_network_course_video AS tpncv
+        LEFT JOIN tb_product_network_course_teacher AS tpnct ON tpnct.id = tpncv.teacher_id
+        <choose>
+            <when test="searchType != null and searchType == '1'.toString()">
+                WHERE tpncv.network_course_id = #{searchId} AND tpncv.del_flag = 0
+            </when>
+            <when test="searchType != null and searchType.length() != 0">
+                LEFT JOIN tb_product_network_course_catalog AS tpncc ON tpncc.id = tpncv.catalog_id AND tpncc.del_flag = 0
+                WHERE tpncv.catalog_id = #{searchId} AND tpncv.del_flag = 0
+            </when>
+        </choose>
+        ORDER BY tpncv.sort ASC, tpncv.create_date DESC
+    </select>
+
+    <select id="getTeachersList"
+            resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseTeacherBean">
+        SELECT
+            tpnct.id,
+            tpnct.`name`,
+            tpnct.introduce,
+            tpnct.head_img AS headImg,
+            tpnct.tags
+        FROM
+            tb_product_network_course_teacher AS tpnct
+            LEFT JOIN tb_product_network_course_teacher_relation AS tpnctr
+                ON tpnctr.teacher_id = tpnct.id AND tpnctr.del_flag = 0
+        WHERE tpnct.del_flag = 0 AND tpnctr.network_course_id = #{courseId}
+        ORDER BY tpnct.sort ASC, tpnct.create_date DESC
+    </select>
+
+    <select id="getTeacherDetails"
+            resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseTeacherBean">
+        SELECT
+            tpnct.id,
+            tpnct.`name`,
+            tpnct.moblie,
+            tpnct.email,
+            tpnct.head_img AS headImg,
+            tpnct.gender,
+            tpnct.introduce,
+            tpnct.tags,
+            tpnct.remarks
+        FROM
+            tb_product_network_course_teacher AS tpnct
+        WHERE tpnct.id = #{teacherId}
+        LIMIT 1
+    </select>
+
+
+    <select id="getTeacherCourses" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseBean">
+        SELECT
+            tpnc.id,
+            tp.id                   AS productId,
+            tp.name,
+            tp.brief,
+            tp.content,
+            tpnc.course_type        AS courseType,
+            tp.list_img             AS listImg,
+            tp.cover_img            AS coverImg,
+            tp.sale_num             AS saleNum,
+            tp.original_price       AS originalPrice,
+            tp.present_price        AS presentPrice,
+            tp.is_promotion         AS isPromotion,
+            tp.is_postage           AS isPostage,
+            tpnc.catalog_number     AS catalogNumber,
+            tpnc.teacher_names      AS teacherNames,
+            tpnc.is_live            AS isLive,
+            tpnc.is_free            AS isFree,
+            tpnc.is_limit_free      AS isLimitFree,
+            tpnc.is_famous_teacher  AS isFamousTeacher,
+            tpnc.status,
+            tpnc.limit_number       AS limitNumber,
+            tp.create_date          AS createDate,
+            tpnc.start_time         AS startTime,
+            tpnc.end_time           AS endTime,
+            tpnc.reserve_start_time AS reserveStartTime,
+            tpnc.reserve_number     AS reserveNumber,
+            tpnc.receive_number     AS receiveNumber,
+            tpnc.sale_start_time    AS saleStartTime,
+            tpnc.sale_end_time      AS saleEndTime,
+            tpnc.shelf_on_time      AS shelfOnTime,
+            tpnc.shelf_off_time     AS shelfOffTime,
+            tpnc.limit_start_time   AS limitStartTime,
+            tpnc.limit_end_time     AS limitEndTime,
+            tpnc.preview_cc_id      AS previewCcId
+        FROM
+            tb_product_network_course AS tpnc
+            LEFT JOIN tb_product AS tp ON tp.id = tpnc.product_id
+        WHERE
+            tp.del_flag = 0 AND
+            tp.is_show = 1 AND
+            tp.type = 1 AND
+            tpnc.id IN (SELECT network_course_id
+                        FROM tb_product_network_course_video
+                        WHERE teacher_id = #{teacherId}) AND
+            tpnc.status IN (1, 2, 3) AND
+            tpnc.shelf_off_time > now()
+        ORDER BY tp.sort ASC, tp.create_date DESC
+    </select>
+
+
+    <insert id="obtainNetworkCourse" parameterType="cn.sparke.goods.modules.v1.networkCourse.bean.UserNetworkCourseBean">
+        <selectKey keyProperty="recordCount" resultType="int" order="BEFORE">
+            SELECT COUNT(1) as recordCount FROM tb_user_network_course WHERE user_id = #{userId} AND network_course_id =
+            #{networkCourseId} AND `type` = #{type}
+        </selectKey>
+        <if test="recordCount > 0">
+            UPDATE tb_user_network_course
+            SET status = 1, update_date = now(), del_flag = 0
+            WHERE user_id = #{userId} AND network_course_id = #{networkCourseId} AND `type` = #{type}
+        </if>
+        <if test="recordCount==0">
+            INSERT INTO tb_user_network_course
+            (id, user_id, network_course_id, `type`, create_date, update_date)
+            VALUES
+            (#{id}, #{userId}, #{networkCourseId}, #{type}, now(), now())
+        </if>
+    </insert>
+
+
+    <update id="incrementNetworkCourseObtainCount" parameterType="cn.sparke.goods.modules.v1.networkCourse.bean.UserNetworkCourseBean">
+        UPDATE
+            tb_product_network_course
+        SET
+            <if test="type != null and type == 1">
+                reserve_number = reserve_number + 1
+            </if>
+            <if test="type != null and type == 2">
+                receive_number = receive_number + 1
+            </if>
+        WHERE id = #{networkCourseId}
+    </update>
+
+
+    <insert id="createOrUpdateVideoPlaylog" parameterType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCoursePlaylogBean">
+        <selectKey keyProperty="recordCount" resultType="int" order="BEFORE">
+            SELECT COUNT(1) AS recordCount FROM tb_product_network_course_video_playlog WHERE user_id = #{userId} AND network_video_id = #{networkVideoId}
+        </selectKey>
+        <if test="recordCount > 0">
+            UPDATE tb_product_network_course_video_playlog
+            SET network_course_id = #{networkCourseId}, play_duration = #{playDuration}, play_time = #{playTime}
+            WHERE user_id = #{userId} AND network_video_id = #{networkVideoId}
+        </if>
+        <if test="recordCount==0">
+            INSERT INTO tb_product_network_course_video_playlog
+            (id, network_course_id, network_video_id, user_id, play_duration, play_time)
+            VALUES
+            (#{id}, #{networkCourseId}, #{networkVideoId}, #{userId}, #{playDuration}, #{playTime})
+        </if>
+    </insert>
+
+
+    <select id="getPreviewVideoCount" resultType="int">
+        SELECT COUNT(1) FROM tb_product_network_course WHERE id = #{courseId} AND preview_cc_id = #{ccVideoId} LIMIT 1
+    </select>
+
+    <select id="getCourseFirstVideoCcId" resultType="String">
+        SELECT video_cc_id FROM tb_product_network_course_video WHERE del_flag = 0 AND network_course_id = #{courseId} ORDER BY sort ASC, create_date DESC LIMIT 1
+    </select>
+
+    <select id="getCourseFirstLiveCcId" resultType="String">
+        SELECT live_cc_id FROM tb_product_network_course_video WHERE del_flag = 0 AND network_course_id = #{courseId} ORDER BY sort ASC, create_date DESC LIMIT 1
+    </select>
+
+    <select id="videoAuthStatus" resultType="int">
+        SELECT
+            COUNT(1)
+        FROM
+            tb_user_network_course AS tunc
+            LEFT JOIN tb_product_network_course_video AS tpncv ON tpncv.network_course_id = tunc.network_course_id
+        WHERE
+            tunc.user_id = #{userId} AND
+            tpncv.network_course_id = #{courseId} AND
+            (tpncv.video_cc_id = #{ccVideoId} OR tpncv.live_cc_id = #{ccVideoId})
+    </select>
+
+    <select id="getCourseIsFreeOrFamousTeacher" resultType="int">
+        SELECT COUNT(1) FROM tb_product_network_course WHERE id = #{courseId} AND (is_famous_teacher = 1 OR is_free = 1)
+    </select>
+
+    <select id="getCourseFamousTeacher" resultType="int">
+        SELECT COUNT(1) FROM tb_product_network_course WHERE id = #{courseId} AND is_famous_teacher = 1
+    </select>
+
+    <select id="getCcLiveUserInfo" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.CCLiveUserBean">
+        SELECT id, nickname AS name, header_img AS avatar FROM tb_user WHERE id = #{userId}
+    </select>
+
+    <select id="liveAuthCourseStatus" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.CCLiveUserBean">
+        SELECT
+            tu.id, tu.nickname AS name, tu.header_img AS avatar
+        FROM
+            tb_user_network_course AS tunc
+            LEFT JOIN tb_user AS tu ON tu.id = tunc.user_id
+            LEFT JOIN tb_product_network_course AS tpnc ON tpnc.id = tunc.network_course_id
+        WHERE
+            tunc.del_flag = 0 AND
+            tunc.status = 1 AND
+            tunc.user_id = #{userId} AND
+            tunc.network_course_id = #{courseId} AND
+            tpnc.live_room_id = #{liveRoomId}
+        LIMIT 1
+    </select>
+
+    <select id="liveAuthVideoStatus" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.CCLiveUserBean">
+        SELECT
+            tu.id, tu.nickname AS name, tu.header_img AS avatar
+        FROM
+            tb_user_network_course AS tunc
+            LEFT JOIN tb_user AS tu ON tu.id = tunc.user_id
+            LEFT JOIN tb_product_network_course AS tpnc ON tpnc.id = tunc.network_course_id
+            LEFT JOIN tb_product_network_course_video AS tpncv ON tpncv.network_course_id = tunc.network_course_id
+        WHERE
+            tunc.del_flag = 0 AND
+            tunc.status = 1 AND
+            tunc.user_id = #{userId} AND
+            tunc.network_course_id = #{courseId} AND
+            tpncv.live_room_id = #{liveRoomId}
+        LIMIT 1
+    </select>
+
+    <select id="getProductInfo" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseBean">
+        SELECT
+            tpnc.id,
+            tpnc.product_id AS productId,
+            tpnc.is_famous_teacher AS isFamousTeacher,
+            tpnc.is_free AS isFree
+        FROM
+            tb_product_network_course tpnc
+        <choose>
+            <when test="searchType != null and searchType == '1'.toString()">
+                WHERE tpnc.id = #{searchId}
+            </when>
+            <when test="searchType != null and searchType == '2'.toString()">
+                LEFT JOIN tb_product_network_course_catalog tpncc ON tpncc.network_course_id = tpnc.id
+                WHERE tpncc.id = #{searchId} AND tpncc.del_flag = 0
+            </when>
+        </choose>
+    </select>
+
+    <select id="orderState" resultType="cn.sparke.goods.modules.v1.networkCourse.bean.ProductNetworkCourseBean">
+        SELECT
+            tpnc.id,
+            tpnc.product_id         AS productId,
+            tpnc.course_type        AS courseType,
+            tpnc.catalog_number     AS catalogNumber,
+            tpnc.teacher_names      AS teacherNames,
+            tpnc.is_live            AS isLive,
+            tpnc.is_free            AS isFree,
+            tpnc.is_limit_free      AS isLimitFree,
+            tpnc.is_famous_teacher  AS isFamousTeacher,
+            tpnc.status,
+            tpnc.limit_number       AS limitNumber,
+            tpnc.start_time         AS startTime,
+            tpnc.end_time           AS endTime,
+            tpnc.reserve_start_time AS reserveStartTime,
+            tpnc.reserve_number     AS reserveNumber,
+            tpnc.receive_number     AS receiveNumber,
+            tpnc.sale_start_time    AS saleStartTime,
+            tpnc.sale_end_time      AS saleEndTime,
+            tpnc.shelf_on_time      AS shelfOnTime,
+            tpnc.shelf_off_time     AS shelfOffTime,
+            tpnc.limit_start_time   AS limitStartTime,
+            tpnc.limit_end_time     AS limitEndTime,
+            tpnc.preview_cc_id      AS previewCcId
+        FROM
+            tb_product_network_course tpnc,
+            tb_product tp,
+            tb_order tor,
+            tb_order_details tod
+        WHERE
+            tpnc.product_id = tp.id
+            AND tp.id = tod.product_id
+            AND tod.order_id = tor.id
+            AND tor.user_id = #{userId}
+            AND tod.product_id = #{productId}
+            AND tor.order_status != 1
+            AND tor.order_status != 6
+    </select>
+
+</mapper>

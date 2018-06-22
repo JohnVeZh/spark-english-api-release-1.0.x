@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="cn.sparke.goods.modules.v1.book.mapper.ProductBookMapper">
+
+    <resultMap id="bookTypeListResultMap" type="cn.sparke.goods.modules.v1.book.bean.ProductBookTypeBean">
+        <result property="id" column="id" />
+        <result property="name" column="name" />
+        <result property="parentId" column="parentId" />
+        <collection property="childList" ofType="cn.sparke.goods.modules.v1.book.bean.ProductBookTypeBean">
+            <id property="id" column="subId"/>
+            <result property="name" column="subName"/>
+            <result property="parentId" column="subParentId"/>
+        </collection>
+    </resultMap>
+
+    <select id="getBookTypeList" resultMap="bookTypeListResultMap">
+        SELECT
+          tpbt1.id,
+          tpbt1.`name`,
+          tpbt1.parent_id AS parentId,
+          tpbt2.id AS subId,
+          tpbt2.`name` AS subName,
+          tpbt2.parent_id AS subParentId
+        FROM
+          tb_product_book_type AS tpbt1
+          LEFT JOIN tb_product_book_type AS tpbt2 ON tpbt1.id = tpbt2.parent_id AND tpbt2.del_flag = 0
+        WHERE tpbt1.del_flag = 0 AND tpbt1.parent_id = 0
+        ORDER BY tpbt2.sort ASC, tpbt2.create_date DESC, tpbt1.sort ASC, tpbt1.create_date DESC
+    </select>
+
+    <select id="findList" resultType="cn.sparke.goods.modules.v1.book.bean.ProductBookBean">
+        SELECT
+            tpb.id,
+            tpb.product_id AS productId,
+            tp.`name`,
+            tp.list_img AS listImg,
+            tp.present_price AS presentPrice,
+            tp.original_price AS originalPrice,
+            tp.is_promotion AS isPromotion,
+            tpb.presss,
+            tp.evaluate_star AS evaluateStar,
+            tp.sale_num AS saleNum,
+            tp.create_date AS createDate
+        FROM tb_product_book AS tpb
+        LEFT JOIN tb_product AS tp ON tp.id = tpb.product_id AND tp.type = 2 AND tp.del_flag = 0 AND tp.is_show = 1
+        WHERE tpb.type_id = #{typeId} AND tp.section_code = #{sectionCode}
+        ORDER BY tp.sort ASC, tp.create_date DESC
+    </select>
+
+    <select id="getHotSearchBooksList" resultType="cn.sparke.goods.modules.v1.book.bean.ProductBookBean">
+        SELECT
+        tpb.id,
+        tpb.product_id AS productId,
+        tp.`name`,
+        tp.list_img AS listImg,
+        tp.present_price AS presentPrice,
+        tp.original_price AS originalPrice,
+        tp.is_promotion AS isPromotion,
+        tpb.presss,
+        tp.evaluate_star AS evaluateStar,
+        tp.sale_num AS saleNum,
+        tp.create_date AS createDate
+        FROM tb_product_book AS tpb
+        LEFT JOIN tb_product AS tp ON tp.id = tpb.product_id
+        WHERE
+            tp.type = 2 AND tp.del_flag = 0 AND tp.is_show = 1
+            <if test="searchTitle != null and searchTitle !=''"> AND tp.name LIKE CONCAT(CONCAT('%', #{searchTitle}), '%')</if>
+        ORDER BY tp.sort ASC, tp.create_date DESC
+    </select>
+
+
+    <resultMap id="productBookDetailsResultMap" type="cn.sparke.goods.modules.v1.book.bean.ProductBookBean">
+        <result property="id" column="id" />
+        <result property="productId" column="productId" />
+        <result property="name" column="name" />
+        <result property="brief" column="brief" />
+        <result property="content" column="content" />
+        <result property="type" column="type" />
+        <result property="contentImgs" column="contentImgs" />
+        <result property="originalPrice" column="originalPrice" />
+        <result property="presentPrice" column="presentPrice" />
+        <result property="saleNum" column="saleNum" />
+        <result property="evaluateStar" column="evaluateStar" />
+        <result property="evaluateNum" column="evaluateNum" />
+        <result property="isSend" column="isSend" />
+        <result property="isPostage" column="isPostage" />
+        <result property="isPromotion" column="isPromotion" />
+        <result property="postage" column="postage" />
+        <result property="presss" column="presss" />
+        <result property="hasCoupon" column="hasCoupon" />
+        <result property="isLike" column="isLike" />
+        <collection property="couponRuleList" ofType="cn.sparke.goods.modules.v1.book.bean.CouponRuleBean" column="{userId=$userId, productId=productId}" select="getCouponRuleList" ></collection>
+    </resultMap>
+
+    <select id="getById" resultMap="productBookDetailsResultMap">
+        SELECT
+            tpb.id,
+            tp.id AS productId,
+            tp.name,
+            tp.brief,
+            tp.content,
+            tp.`type`,
+            tp.content_imgs AS contentImgs,
+            tp.original_price AS originalPrice,
+            tp.present_price AS presentPrice,
+            tp.sale_num AS saleNum,
+            tp.evaluate_star AS evaluateStar,
+            tp.evaluate_num AS evaluateNum,
+            tp.is_send AS isSend,
+            tp.is_postage AS isPostage,
+            tp.is_promotion AS isPromotion,
+            tp.postage,
+            tpb.presss,
+            (CASE (SELECT COUNT(1) FROM tb_coupon_gain_scene WHERE `type` = 1 AND content_id = tp.id) WHEN 0 THEN 0 ELSE 1 END) AS hasCoupon,
+            (CASE (SELECT COUNT(1) FROM tb_user_favorite tuf WHERE tuf.`type`= 2 AND tuf.target_id = tpb.id AND tuf.user_id = #{userId}) WHEN 0 THEN 0 ELSE 1 END) AS isLike,
+            #{userId} AS $userId
+        FROM
+            tb_product_book AS tpb
+            LEFT JOIN tb_product AS tp on tp.id = tpb.product_id AND tp.type = 2
+        WHERE
+            tpb.id = #{bookId}
+    </select>
+
+    <select id="getCouponRuleList" parameterType="java.util.HashMap" resultType="cn.sparke.goods.modules.v1.book.bean.CouponRuleBean">
+        SELECT
+            tcr.id,
+            tcgs.id AS gainSceneId,
+            tcr.title,
+            tcr.effect_date AS effectDate,
+            tcr.invalid_date AS invalidDate,
+            tcr.min_money AS minMoney,
+            tcr.discount_money AS discountMoney,
+            (CASE (SELECT COUNT(1) FROM tb_coupon_gain_record AS tcgr WHERE tcgr.rule_id = tcr.id AND tcgr.user_id = #{userId}) WHEN 0 THEN 0 ELSE 1 END) AS isGain
+        FROM
+            tb_coupon_gain_scene AS tcgs
+            LEFT JOIN tb_coupon_rule AS tcr ON tcgs.rule_id = tcr.id AND tcr.del_flag = 0
+        WHERE
+            tcgs.del_flag = 0 AND
+            tcgs.type = 1 AND
+            tcgs.content_id = #{productId}
+    </select>
+
+</mapper>

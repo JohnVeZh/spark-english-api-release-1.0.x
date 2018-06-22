@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.base.modules.v1.banners.mapper.CouponRuleMapper">
+    <select id="findRuleListByScene" resultType="cn.sparke.base.modules.v1.banners.bean.CouponRuleBean">
+        SELECT
+        coupon_gain_scene.id AS gainSceneId,
+        coupon_rule.id,
+        coupon_rule.title,
+        coupon_rule.effect_date,
+        coupon_rule.invalid_date,
+        coupon_rule.min_money,
+        <if test="userId!=null">
+            ifnull((SELECT 1 from tb_coupon_gain_record gr WHERE gr.user_id = #{userId} AND gr.rule_id = coupon_rule.id
+            LIMIT 1),0) as isGain,
+        </if>
+        <if test="userId==null">
+            0 as isGain,
+        </if>
+        coupon_rule.discount_money
+        FROM
+        tb_coupon_gain_scene coupon_gain_scene
+        INNER JOIN tb_coupon_rule coupon_rule
+        ON coupon_gain_scene.rule_id = coupon_rule.id
+        WHERE
+        coupon_rule.del_flag = 0
+        AND coupon_gain_scene.content_id = #{contentId}
+        AND coupon_rule.status = 1
+        AND (now() &gt;= effect_date and now() &lt;= invalid_date)
+        ORDER BY coupon_rule.create_date DESC
+    </select>
+</mapper>

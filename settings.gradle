@@ -1,0 +1,13 @@
+rootProject.name = 'spark-english-api'
+
+include 'sparke-module-base'
+include 'sparke-module-community'
+include 'sparke-module-special'
+include 'sparke-module-support'
+include 'sparke-module-user'
+include 'sparke-module-easy'
+include 'sparke-module-goods'
+include 'sparke-module-order'
+include 'sparke-module-gift'
+include 'sparke-module-scan'
+

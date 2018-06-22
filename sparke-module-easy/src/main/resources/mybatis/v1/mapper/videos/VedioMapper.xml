@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.easy.modules.v1.videos.mapper.VedioMapper">
+
+    <select id="queryList" resultType="cn.sparke.easy.modules.v1.videos.bean.VideoBean">
+        SELECT
+            id,
+            name,
+            cc_id,
+            img
+        FROM
+            tb_qr_network_video t
+        WHERE
+            section_code = #{sectionCode}
+        AND catalog_id = #{catalogId}
+        AND t.del_flag=0
+        ORDER BY t.sort ASC ,t.create_date DESC
+    </select>
+
+
+</mapper>

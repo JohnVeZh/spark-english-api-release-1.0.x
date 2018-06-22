@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="cn.sparke.gift.modules.v1.activationCode.mapper.ActivationCodeMapper">
+
+    <select id="isActivated" resultType="int">
+        SELECT COUNT(1) FROM tb_gift_activation_code WHERE is_activated = 1 AND activate_user_id = #{userId} AND section_code = #{sectionCode} LIMIT 1
+    </select>
+
+    <resultMap id="detailsResultMap" type="cn.sparke.gift.modules.v1.activationCode.bean.ActivationCodeBean">
+        <id property="id" column="id" />
+        <result property="code" column="code" />
+        <result property="sectionCode" column="sectionCode" />
+        <result property="isActivated" column="isActivated" />
+        <result property="activateTime" column="activateTime" />
+        <result property="activateUserId" column="activateUserId" />
+        <result property="address" column="address" />
+        <result property="createDate" column="createDate" />
+        <collection property="courseIdList" ofType="java.lang.String">
+            <id property="courseId" column="courseId"/>
+        </collection>
+
+    </resultMap>
+
+    <select id="details" resultMap="detailsResultMap">
+        SELECT
+            tgac.id,
+            tgac.`code`,
+            tgac.section_code AS sectionCode,
+            tgac.is_activated AS isActivated,
+            tgac.activate_time AS activateTime,
+            tgac.activate_user_id AS activateUserId,
+            tgac.address,
+            tgac.create_date AS createDate,
+            tgrc.network_course_id AS courseId
+        FROM
+            tb_gift_activation_code AS tgac
+            LEFT JOIN tb_gift_recommend_course AS tgrc ON tgac.section_code = tgrc.section_code
+        WHERE
+            tgac.`code` = #{code}
+        LIMIT 1
+    </select>
+
+    <select id="description" resultType="cn.sparke.gift.modules.v1.activationCode.bean.ActivationCodeBean">
+        SELECT
+        tgac.id,
+        tgac.section_code,
+        tgac.create_date,
+        sd.description
+        FROM
+        tb_gift_activation_code AS tgac,
+        sys_dict AS sd
+        WHERE
+        sd.value = tgac.section_code AND
+        sd.type = 'gift_activation_code_desc' AND
+        tgac.`code` = #{code}
+        LIMIT 1
+    </select>
+
+    <select id="isExpired" resultType="int">
+        SELECT
+            COUNT(1)
+        FROM
+            tb_gift_activation_code AS tgac,
+            tb_gift_recommend_course AS tgrc,
+            tb_product_network_course AS tpnc
+        WHERE
+            tgac.section_code = tgrc.section_code AND
+            tgrc.network_course_id = tpnc.id AND
+            tgac.code = #{code} AND
+            tpnc.end_time IS NOT NULL AND
+            tpnc.end_time &lt; now()
+    </select>
+
+    <select id="findActivatedSectionCodeByUserId" resultType="int">
+        SELECT
+            section_code
+        FROM
+            tb_gift_activation_code
+        WHERE
+            del_flag = 0 AND
+            activate_user_id = #{activateUserId}
+    </select>
+
+    <select id="queryActivatedUserCount" resultType="int">
+        SELECT MAX(sort) FROM tb_gift_activation_code WHERE del_flag = 0 AND is_activated = 1 AND section_code = #{sectionCode}
+    </select>
+
+    <update id="activate">
+        UPDATE
+          tb_gift_activation_code
+        SET
+            activate_user_id = #{activateUserId},
+            is_activated = 1,
+            address = #{address},
+            activate_time = now(),
+            update_date = now(),
+            sort = #{sort}
+        WHERE
+        `code` = #{code}
+    </update>
+
+    <insert id="insertOrUpdateUserNetworkCourse" parameterType="cn.sparke.gift.modules.v1.activationCode.bean.UserNetworkCourseBean">
+        <selectKey keyProperty="recordCount" resultType="int" order="BEFORE">
+            SELECT COUNT(1) as recordCount FROM tb_user_network_course WHERE user_id = #{userId} AND network_course_id = #{networkCourseId} AND `type` = #{type}
+        </selectKey>
+        <if test="recordCount > 0">
+            UPDATE tb_user_network_course
+            SET status = 1, update_date = now(), del_flag = 0
+            WHERE user_id = #{userId} AND network_course_id = #{networkCourseId} AND `type` = #{type}
+        </if>
+        <if test="recordCount==0">
+            INSERT INTO tb_user_network_course
+            (id, user_id, network_course_id, `type`, create_date, update_date)
+            VALUES
+            (#{id}, #{userId}, #{networkCourseId}, #{type}, now(), now())
+        </if>
+    </insert>
+
+    <insert id="insertUserGiftPlanNetworkCourse">
+        INSERT INTO
+            tb_user_network_course (id, user_id, network_course_id, `type`, create_date, update_date)
+        SELECT
+            REPLACE(temp.tempId,'-',''), #{userId}, temp.network_course_id, #{type}, now(), now()
+        FROM (
+                 SELECT UUID() tempId, tgpnc.network_course_id
+                 FROM
+                     tb_gift_plan_network_course AS tgpnc,
+                     tb_gift_plan_config AS tgpc
+                 WHERE
+                     tgpnc.plan_id = tgpc.id AND
+                     tgpnc.del_flag = 0 AND
+                     tgpc.del_flag = 0 AND
+                     tgpc.section_code = #{sectionCode}
+                 GROUP BY tgpnc.id
+             ) AS temp
+    </insert>
+
+    <insert id="insertSubjectiveSubmitRecord">
+        INSERT INTO
+            tb_gift_subjective_submit_record (id, user_id, section_code, code_id, pre_translate_total, pre_write_total, mid_translate_total, mid_write_total, post_translate_total, post_write_total, create_date, update_date)
+        VALUES
+            (
+                #{id},
+                #{userId},
+                #{sectionCode},
+                #{codeId},
+                #{preTranslateTotal},
+                #{preWriteTotal},
+                #{midTranslateTotal},
+                #{midWriteTotal},
+                #{postTranslateTotal},
+                #{postWriteTotal},
+                now(),
+                now()
+            )
+    </insert>
+
+</mapper>

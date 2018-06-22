@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="cn.sparke.community.modules.v1.news.mapper.CommunityNewsMapper">
+
+    <select id="findList" resultType="cn.sparke.community.modules.v1.news.bean.CommunityNewsBean">
+        SELECT
+            id,
+            title,
+            subtitle AS subTitle,
+            publish_time AS publishTime,
+            comment_num AS commentNum,
+            list_img AS listImg
+        FROM tb_community_news
+        WHERE del_flag = 0 AND is_show = 1
+        ORDER BY is_top DESC, top_time DESC, is_recommend DESC, recommend_time DESC, publish_time DESC, create_date DESC
+    </select>
+
+    <select id="getById" resultType="cn.sparke.community.modules.v1.news.bean.CommunityNewsBean">
+        select
+            id,
+            title,
+            subtitle AS subTitle,
+            publish_time AS publishTime,
+            author,
+            list_img AS listImg,
+            content,
+            read_num AS readNum,
+            comment_num AS commentNum,
+            is_recommend AS isRecommend,
+            (CASE (SELECT COUNT(1) FROM tb_user_favorite WHERE type = 1 AND user_id = #{userId} AND target_id = tcn.id) WHEN 0 THEN 0 ELSE 1 END) AS isFavorite,
+            is_top AS isTop
+        FROM
+            tb_community_news AS tcn
+        WHERE
+            del_flag = 0 AND is_show = 1 AND id = #{newsId}
+        LIMIT 1
+    </select>
+
+    <!--增加资讯阅读数-->
+    <update id="addReadNum">
+        UPDATE tb_community_news SET read_num = read_num + 1 WHERE id = #{newsId}
+    </update>
+
+    <select id="getRecommendList" resultType="cn.sparke.community.modules.v1.news.bean.CommunityNewsBean">
+        SELECT
+            id,
+            title,
+            list_img AS listImg,
+            comment_num AS commentNum,
+            author,
+            publish_time AS publishTime
+        FROM tb_community_news
+        WHERE del_flag = 0 AND is_show = 1 AND is_recommend = 1
+        ORDER BY recommend_time DESC, top_time DESC, publish_time DESC, create_date DESC
+    </select>
+
+
+</mapper>

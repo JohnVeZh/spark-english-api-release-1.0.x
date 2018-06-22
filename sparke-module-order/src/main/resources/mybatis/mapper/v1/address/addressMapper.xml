@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.order.modules.v1.order.mapper.AddressMapper">
+    <select id="getById" resultType="cn.sparke.order.modules.v1.order.bean.AddressBean">
+        SELECT *
+        FROM tb_user_address
+        WHERE id = #{id}
+              AND del_flag = 0
+    </select>
+    <!--获取用户默认的收货地址-->
+    <select id="getUserDefaultAddress" resultType="cn.sparke.order.modules.v1.order.bean.AddressBean">
+        SELECT *
+        FROM tb_user_address
+        WHERE user_id = #{userId}
+              AND del_flag = 0
+              AND is_default = 1
+        ORDER BY create_date DESC
+        LIMIT 1
+    </select>
+</mapper>

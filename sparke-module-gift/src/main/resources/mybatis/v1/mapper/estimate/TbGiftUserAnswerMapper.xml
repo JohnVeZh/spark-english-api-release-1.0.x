@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sparke.gift.modules.v1.estimate.mapper.TbGiftUserAnswerMapper">
+    <insert id="insertList">
+        insert into tb_gift_user_answer (id,report_id, paper_id, user_id,
+        period, question_type, question_no,
+        user_answer, is_teacher_evaluate, score,
+        reply_user_id, reply_date, create_date,
+        create_by, update_date, update_by,
+        remarks, sort, del_flag,
+        right_answer)
+        <foreach collection="giftUserAnswerList" item="giftUserAnswer" open="values (" separator="),(" close=")">
+            #{giftUserAnswer.id,jdbcType=VARCHAR},#{giftUserAnswer.reportId,jdbcType=VARCHAR}, #{giftUserAnswer.paperId,jdbcType=VARCHAR},
+            #{giftUserAnswer.userId,jdbcType=VARCHAR},
+            #{giftUserAnswer.period,jdbcType=TINYINT}, #{giftUserAnswer.questionType,jdbcType=TINYINT},
+            #{giftUserAnswer.questionNo,jdbcType=INTEGER},
+            #{giftUserAnswer.userAnswer,jdbcType=VARCHAR}, #{giftUserAnswer.isTeacherEvaluate,jdbcType=TINYINT},
+            #{giftUserAnswer.score,jdbcType=INTEGER},
+            #{giftUserAnswer.replyUserId,jdbcType=VARCHAR}, #{giftUserAnswer.replyDate,jdbcType=TIMESTAMP},
+            #{giftUserAnswer.createDate,jdbcType=TIMESTAMP},
+            #{giftUserAnswer.createBy,jdbcType=VARCHAR}, #{giftUserAnswer.updateDate,jdbcType=TIMESTAMP},
+            #{giftUserAnswer.updateBy,jdbcType=VARCHAR},
+            #{giftUserAnswer.remarks,jdbcType=VARCHAR}, #{giftUserAnswer.sort,jdbcType=INTEGER},
+            #{giftUserAnswer.delFlag,jdbcType=TINYINT},
+            #{giftUserAnswer.rightAnswer,jdbcType=LONGVARCHAR}
+        </foreach>
+    </insert>
+</mapper>

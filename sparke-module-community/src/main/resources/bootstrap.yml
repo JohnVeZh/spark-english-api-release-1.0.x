@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: sparke-module-community
+  cloud:
+    config:
+      uri: http://10.27.7.64:8083
+      label: master
+      name: sparke-module
+      profile: dev
+encrypt:
+  failOnError: false
+management:
+  security:
+    enabled:  false

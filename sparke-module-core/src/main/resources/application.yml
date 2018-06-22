@@ -1,0 +1,287 @@
+spring:
+  profiles:
+    active: dev
+  output:
+    ansi:
+      enabled: ALWAYS
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: GMT+8
+version: v{(\\d)+}
+mybatis:
+  mapper-locations: classpath:mybatis/**/*.xml
+  config-location: classpath:mybatis-config.xml
+
+---
+spring:
+  profiles: dev
+  datasource:
+    url: jdbc:mysql://rm-bp12e6xa0a8hd5eja.mysql.rds.aliyuncs.com:3306/spark_english_dev?allowMultiQueries=true
+    username: sparkdb
+    password: Spark2017!@#
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    filters: stat
+    maxActive: 100
+    initialSize: 1
+    maxWait: 60000
+    minIdle: 1
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: select 'x'
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    poolPreparedStatements: true
+    maxPoolPreparedStatementPerConnectionSize: 20
+eureka:
+  client:
+    registryFetchIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8081/eureka/
+  instance:
+      leaseRenewalIntervalInSeconds: 10
+      prefer-ip-address: true
+project:
+  mUrl: http://m.cg.sparke.cn
+  shareBaseUrl: http://share.jszx.sparke.cn
+  cacheSuffix: sparke
+  cache:
+    level:  test
+    url: memcached.jszx.sparke.cn
+    port: 9999
+  sms: lmobile
+  lmobile:
+    url: http://cf.51welink.com/submitdata/service.asmx/g_Submit
+    sname: dlxhjykj
+    spwd: Z8ZmY1FQ
+    sprdid: 1012888
+  qiniu:
+    access_key_id: NEg0gY6JM0N-UUeGrfEz3wvX6NJFRiAXwQ-SHdjS
+    access_key_secret: 00pJ0KbemdYzpfpETC-c8wSjYgWUPZbiOY6_Gzo8
+    bucket: spark
+  weixin:
+    pay:
+      app_id: wx432d7835b0f260d7
+      mch_id: 1359812902
+      notify_url: http://116.62.28.198:8080/v1/orders/pay/weixin/callback
+      pay_key: sparkesparkesparkesparkesparke12
+  ali:
+    pay:
+      app_id: 2017041406715111
+      server_url: https://openapi.alipay.com/gateway.do
+      private_key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCDE2ycsI6Ml51Y/SuXuWaAaVtCvQc2mtlrJX4HdvDpDQZMdxkhyWgBJTzWbImoUi5QqW2Sye6vvcgVgNBRfVQBSnpoEDsaSLbKe61VIyAzmS1tXCNbWxu2YiYqa5Y01wTQ6AlTEFsD9akD/5053uEmE7HP47Q9BwPXcbOesEXu/eLrs4lpXCwSrzF3GxTURXYPVNSzvwXQNS2b/t2IrKtGlXrFqCQEOCbWt+nCNPgO5vKy0arzyvenSc8Qf8rJAYQuF8131ep/aN07P8iNXHGLZVTAEQ+IJaJZ7XXYJA5jf0Pj0DY+7wMuoaX7kQZg9IgJf4pVXWdm3fmHOcxjcCkpAgMBAAECggEAdbIYYa4LoeR17jUOUqOwjXeM8aVId9idh59Xxh4f/jOqxzheAb+WuwiT0zoMdW6tldI8yIS35Wf05JIQ/EscBji5Jv4EA/rs324kWwE6ZfqSFtOYD+0EOkVxXb/TVUkJUwg3bzWNdEW+6Q86P3+JDaa7kB83dWD6Kxc2oTRI52oaopCs2Iu78b8hNY27Y26cn8Z9DHfWf+Gs5vG+7Wwm8l0BlmjcoLsXLiQOdUagOOIRj2x/gF4eYEKL89yBdmm/GWO8FoxbFhhmTQYWSGAEt2tzuEGknq1r8TAvJm4wvfnAR8lynQoUDqpjyNnBPlNQN7nGn4Wxhd9AzAd4YG2OrQKBgQC8Wg+pvBcPk+O3yPaTsLy++e5GnvSye9UN41pje03T0c2kEZvroUhjQtqEZWIKDR4oH6f1zweGPHhYWSMntlBzxjVoSamgkTPXvlYf/+har55lbjj6oBMdc2PLpcI8AcYVOEs3YxFcNQuiiaAeAyHIQ1rMeUOYlcoobtil0kmtpwKBgQCyJyYO1kt3BJHJYgALjgdMha4xCtQnJA1PEjmDVb/0j8G+gnqXNOPn0ZKCBUvX2DHOBKOpySB1B9q5el1kfY8w0aui6epZXP9eLwLHpFJOA3sxGNLV9g7qF/7PxqwlM4sNDZxGwyLLgDmHe7a31+KHjixNBpIxSorH0bnG3bBsrwKBgGPgXe3jj1bzVQ1fw2ENlwit/2vzXk5G2/NBW+zktaBc4G7f545LN9dq2/TYzeQGkLc2EhqGbbcA2c//dGTaiE7cC/YBGbHLTXJZu9G8Ibn05kli6VP9DiXPyltyykyHpEIcV8ZHAi2i80h9Miq3/nHzRXKn2vBOfaRzIu7LU8aBAoGAJop1n0wY81yXtXtwCw/k4FcjQhTXpMgV4P9OVe1dI6ld/rr3jnKww1wBWAORTtbEn489YOPUE71pQisIvU60hZk2in4UZtTJojSFY29XJu113z9BjWw3+cjLJWQTpdCqyl4hauWYR3Ir//VxqAAaT70gNGGxitxXfbcPe8hF/J0CgYEAon2EsWjDed3R2fk0MYdHprKvQ2M2XGJnT34ehE6W82SrhkZv4m6bCeBuk8QKhqHKxxq2c6Y30NnwsQGMwhi16F+Qn7JIrqyGtKc7ED/oIxU9cIMiOP71zaD6wKzmu+7m7PhRQXJ9STVoTahb0rZ19x+toBeQYd7Cv1HIdiQGsTk=
+      public_key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoe19s7OGbud7i42sjy27v9D75bwlwNvXcs9MKu3MFcBcz9I9azadEqZ/r8KXi7i6uZov+lXAObFb8zn4SfxEtBnWi4V8259zfgjobj5tgHk0DQxYDOAMqmnudbpDW/zMCY4vYNN/OPfDCZbR36VRg+TSNFM/BT68XJlOega9Qk8OyYyXaaLA5eXvbnbnZRKHjJ3CGXi4s9SaHRkjn4UokoRq7iLfAPiCRE6W+ICM/GZ6s/8ozZkC5PlA9fYROdXTW40ZRAruwbx5dHHrn0o12lgwHCB3qhiYgpcz4btEJX7gopJZzr1zDmoiwG3jkwddiiUnMG0XlReRPBeG00CiiQIDAQAB
+      notify_url: http://116.62.28.198:8080/v1/orders/pay/ali/callback
+      pc_return_url: http://192.168.15.38:8000/static/view/pay/paid.html
+      m_return_url: http://192.168.15.38:8080/paySuccessful.html
+logging:
+  level:
+    root: info
+---
+spring:
+  profiles: localTest
+  datasource:
+    url: jdbc:mysql://rm-bp12e6xa0a8hd5eja.mysql.rds.aliyuncs.com:3306/spark_english_test?allowMultiQueries=true
+    username: sparkdb
+    password: Spark2017!@#
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    filters: stat
+    maxActive: 100
+    initialSize: 1
+    maxWait: 60000
+    minIdle: 1
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: select 'x'
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    poolPreparedStatements: true
+    maxPoolPreparedStatementPerConnectionSize: 20
+eureka:
+  client:
+    registryFetchIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: http://192.168.15.38:8081/eureka/
+  instance:
+      leaseRenewalIntervalInSeconds: 10
+      prefer-ip-address: true
+project:
+  mUrl: http://m.cg.sparke.cn
+  shareBaseUrl: http://192.168.15.38:8090
+  cacheSuffix: sparke
+  cache:
+    level:  test
+    url: memcached.jszx.sparke.cn
+    port: 9999
+  sms: none
+  qiniu:
+    access_key_id: NEg0gY6JM0N-UUeGrfEz3wvX6NJFRiAXwQ-SHdjS
+    access_key_secret: 00pJ0KbemdYzpfpETC-c8wSjYgWUPZbiOY6_Gzo8
+    bucket: spark
+  weixin:
+    pay:
+      app_id: wx432d7835b0f260d7
+      mch_id: 1359812902
+      notify_url: http://116.62.28.198:8080/v1/orders/pay/weixin/callback
+      pay_key: sparkesparkesparkesparkesparke12
+  lmobile:
+      url: http://cf.51welink.com/submitdata/service.asmx/g_Submit
+      sname: dlxhjykj
+      spwd: Z8ZmY1FQ
+      sprdid: 1012888
+  ali:
+    pay:
+      app_id: 2017041406715111
+      server_url: https://openapi.alipay.com/gateway.do
+      private_key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCDE2ycsI6Ml51Y/SuXuWaAaVtCvQc2mtlrJX4HdvDpDQZMdxkhyWgBJTzWbImoUi5QqW2Sye6vvcgVgNBRfVQBSnpoEDsaSLbKe61VIyAzmS1tXCNbWxu2YiYqa5Y01wTQ6AlTEFsD9akD/5053uEmE7HP47Q9BwPXcbOesEXu/eLrs4lpXCwSrzF3GxTURXYPVNSzvwXQNS2b/t2IrKtGlXrFqCQEOCbWt+nCNPgO5vKy0arzyvenSc8Qf8rJAYQuF8131ep/aN07P8iNXHGLZVTAEQ+IJaJZ7XXYJA5jf0Pj0DY+7wMuoaX7kQZg9IgJf4pVXWdm3fmHOcxjcCkpAgMBAAECggEAdbIYYa4LoeR17jUOUqOwjXeM8aVId9idh59Xxh4f/jOqxzheAb+WuwiT0zoMdW6tldI8yIS35Wf05JIQ/EscBji5Jv4EA/rs324kWwE6ZfqSFtOYD+0EOkVxXb/TVUkJUwg3bzWNdEW+6Q86P3+JDaa7kB83dWD6Kxc2oTRI52oaopCs2Iu78b8hNY27Y26cn8Z9DHfWf+Gs5vG+7Wwm8l0BlmjcoLsXLiQOdUagOOIRj2x/gF4eYEKL89yBdmm/GWO8FoxbFhhmTQYWSGAEt2tzuEGknq1r8TAvJm4wvfnAR8lynQoUDqpjyNnBPlNQN7nGn4Wxhd9AzAd4YG2OrQKBgQC8Wg+pvBcPk+O3yPaTsLy++e5GnvSye9UN41pje03T0c2kEZvroUhjQtqEZWIKDR4oH6f1zweGPHhYWSMntlBzxjVoSamgkTPXvlYf/+har55lbjj6oBMdc2PLpcI8AcYVOEs3YxFcNQuiiaAeAyHIQ1rMeUOYlcoobtil0kmtpwKBgQCyJyYO1kt3BJHJYgALjgdMha4xCtQnJA1PEjmDVb/0j8G+gnqXNOPn0ZKCBUvX2DHOBKOpySB1B9q5el1kfY8w0aui6epZXP9eLwLHpFJOA3sxGNLV9g7qF/7PxqwlM4sNDZxGwyLLgDmHe7a31+KHjixNBpIxSorH0bnG3bBsrwKBgGPgXe3jj1bzVQ1fw2ENlwit/2vzXk5G2/NBW+zktaBc4G7f545LN9dq2/TYzeQGkLc2EhqGbbcA2c//dGTaiE7cC/YBGbHLTXJZu9G8Ibn05kli6VP9DiXPyltyykyHpEIcV8ZHAi2i80h9Miq3/nHzRXKn2vBOfaRzIu7LU8aBAoGAJop1n0wY81yXtXtwCw/k4FcjQhTXpMgV4P9OVe1dI6ld/rr3jnKww1wBWAORTtbEn489YOPUE71pQisIvU60hZk2in4UZtTJojSFY29XJu113z9BjWw3+cjLJWQTpdCqyl4hauWYR3Ir//VxqAAaT70gNGGxitxXfbcPe8hF/J0CgYEAon2EsWjDed3R2fk0MYdHprKvQ2M2XGJnT34ehE6W82SrhkZv4m6bCeBuk8QKhqHKxxq2c6Y30NnwsQGMwhi16F+Qn7JIrqyGtKc7ED/oIxU9cIMiOP71zaD6wKzmu+7m7PhRQXJ9STVoTahb0rZ19x+toBeQYd7Cv1HIdiQGsTk=
+      public_key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoe19s7OGbud7i42sjy27v9D75bwlwNvXcs9MKu3MFcBcz9I9azadEqZ/r8KXi7i6uZov+lXAObFb8zn4SfxEtBnWi4V8259zfgjobj5tgHk0DQxYDOAMqmnudbpDW/zMCY4vYNN/OPfDCZbR36VRg+TSNFM/BT68XJlOega9Qk8OyYyXaaLA5eXvbnbnZRKHjJ3CGXi4s9SaHRkjn4UokoRq7iLfAPiCRE6W+ICM/GZ6s/8ozZkC5PlA9fYROdXTW40ZRAruwbx5dHHrn0o12lgwHCB3qhiYgpcz4btEJX7gopJZzr1zDmoiwG3jkwddiiUnMG0XlReRPBeG00CiiQIDAQAB
+      notify_url: http://116.62.28.198:8080/v1/orders/pay/ali/callback
+      pc_return_url: http://192.168.15.38:8000/static/view/pay/paid.html
+      m_return_url: http://192.168.15.38:8080/paySuccessful.html
+logging:
+  level:
+    root: info
+---
+spring:
+  profiles: tests
+  datasource:
+    url: jdbc:mysql://rm-bp12e6xa0a8hd5eja.mysql.rds.aliyuncs.com:3306/spark_english_dev?allowMultiQueries=true
+    username: sparkdb
+    password: Spark2017!@#
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    filters: stat
+    maxActive: 100
+    initialSize: 1
+    maxWait: 60000
+    minIdle: 1
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: select 'x'
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    poolPreparedStatements: true
+    maxPoolPreparedStatementPerConnectionSize: 20
+eureka:
+  client:
+    registryFetchIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: http://10.27.7.64:8081/eureka/
+  instance:
+      leaseRenewalIntervalInSeconds: 10
+      prefer-ip-address: true
+project:
+  logstash:
+    uri: 116.62.28.198:4560
+  mUrl: http://m.cg.sparke.cn
+  shareBaseUrl: http://share.jszx.sparke.cn
+  cacheSuffix: sparke
+  cache:
+    level:  test
+    url: memcached.jszx.sparke.cn
+    port: 9999
+  sms: lmobile
+  qiniu:
+    access_key_id: NEg0gY6JM0N-UUeGrfEz3wvX6NJFRiAXwQ-SHdjS
+    access_key_secret: 00pJ0KbemdYzpfpETC-c8wSjYgWUPZbiOY6_Gzo8
+    bucket: spark
+  weixin:
+    pay:
+      app_id: wx432d7835b0f260d7
+      mch_id: 1359812902
+      notify_url: http://116.62.28.198:8080/v1/orders/pay/weixin/callback
+      pay_key: sparkesparkesparkesparkesparke12
+  lmobile:
+      url: http://cf.51welink.com/submitdata/service.asmx/g_Submit
+      sname: dlxhjykj
+      spwd: Z8ZmY1FQ
+      sprdid: 1012888
+  ali:
+    pay:
+      app_id: 2017041406715111
+      server_url: https://openapi.alipay.com/gateway.do
+      private_key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCDE2ycsI6Ml51Y/SuXuWaAaVtCvQc2mtlrJX4HdvDpDQZMdxkhyWgBJTzWbImoUi5QqW2Sye6vvcgVgNBRfVQBSnpoEDsaSLbKe61VIyAzmS1tXCNbWxu2YiYqa5Y01wTQ6AlTEFsD9akD/5053uEmE7HP47Q9BwPXcbOesEXu/eLrs4lpXCwSrzF3GxTURXYPVNSzvwXQNS2b/t2IrKtGlXrFqCQEOCbWt+nCNPgO5vKy0arzyvenSc8Qf8rJAYQuF8131ep/aN07P8iNXHGLZVTAEQ+IJaJZ7XXYJA5jf0Pj0DY+7wMuoaX7kQZg9IgJf4pVXWdm3fmHOcxjcCkpAgMBAAECggEAdbIYYa4LoeR17jUOUqOwjXeM8aVId9idh59Xxh4f/jOqxzheAb+WuwiT0zoMdW6tldI8yIS35Wf05JIQ/EscBji5Jv4EA/rs324kWwE6ZfqSFtOYD+0EOkVxXb/TVUkJUwg3bzWNdEW+6Q86P3+JDaa7kB83dWD6Kxc2oTRI52oaopCs2Iu78b8hNY27Y26cn8Z9DHfWf+Gs5vG+7Wwm8l0BlmjcoLsXLiQOdUagOOIRj2x/gF4eYEKL89yBdmm/GWO8FoxbFhhmTQYWSGAEt2tzuEGknq1r8TAvJm4wvfnAR8lynQoUDqpjyNnBPlNQN7nGn4Wxhd9AzAd4YG2OrQKBgQC8Wg+pvBcPk+O3yPaTsLy++e5GnvSye9UN41pje03T0c2kEZvroUhjQtqEZWIKDR4oH6f1zweGPHhYWSMntlBzxjVoSamgkTPXvlYf/+har55lbjj6oBMdc2PLpcI8AcYVOEs3YxFcNQuiiaAeAyHIQ1rMeUOYlcoobtil0kmtpwKBgQCyJyYO1kt3BJHJYgALjgdMha4xCtQnJA1PEjmDVb/0j8G+gnqXNOPn0ZKCBUvX2DHOBKOpySB1B9q5el1kfY8w0aui6epZXP9eLwLHpFJOA3sxGNLV9g7qF/7PxqwlM4sNDZxGwyLLgDmHe7a31+KHjixNBpIxSorH0bnG3bBsrwKBgGPgXe3jj1bzVQ1fw2ENlwit/2vzXk5G2/NBW+zktaBc4G7f545LN9dq2/TYzeQGkLc2EhqGbbcA2c//dGTaiE7cC/YBGbHLTXJZu9G8Ibn05kli6VP9DiXPyltyykyHpEIcV8ZHAi2i80h9Miq3/nHzRXKn2vBOfaRzIu7LU8aBAoGAJop1n0wY81yXtXtwCw/k4FcjQhTXpMgV4P9OVe1dI6ld/rr3jnKww1wBWAORTtbEn489YOPUE71pQisIvU60hZk2in4UZtTJojSFY29XJu113z9BjWw3+cjLJWQTpdCqyl4hauWYR3Ir//VxqAAaT70gNGGxitxXfbcPe8hF/J0CgYEAon2EsWjDed3R2fk0MYdHprKvQ2M2XGJnT34ehE6W82SrhkZv4m6bCeBuk8QKhqHKxxq2c6Y30NnwsQGMwhi16F+Qn7JIrqyGtKc7ED/oIxU9cIMiOP71zaD6wKzmu+7m7PhRQXJ9STVoTahb0rZ19x+toBeQYd7Cv1HIdiQGsTk=
+      public_key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoe19s7OGbud7i42sjy27v9D75bwlwNvXcs9MKu3MFcBcz9I9azadEqZ/r8KXi7i6uZov+lXAObFb8zn4SfxEtBnWi4V8259zfgjobj5tgHk0DQxYDOAMqmnudbpDW/zMCY4vYNN/OPfDCZbR36VRg+TSNFM/BT68XJlOega9Qk8OyYyXaaLA5eXvbnbnZRKHjJ3CGXi4s9SaHRkjn4UokoRq7iLfAPiCRE6W+ICM/GZ6s/8ozZkC5PlA9fYROdXTW40ZRAruwbx5dHHrn0o12lgwHCB3qhiYgpcz4btEJX7gopJZzr1zDmoiwG3jkwddiiUnMG0XlReRPBeG00CiiQIDAQAB
+      notify_url: http://116.62.28.198:8080/v1/orders/pay/ali/callback
+      pc_return_url: http://192.168.15.38:8000/static/view/pay/paid.html
+      m_return_url: http://192.168.15.38:8080/paySuccessful.html
+logging:
+  level:
+    root: info
+---
+spring:
+  profiles: prod
+  datasource:
+      url: jdbc:mysql://rm-bp12e6xa0a8hd5eja.mysql.rds.aliyuncs.com:3306/spark_english_test?allowMultiQueries=true
+      username: sparkdb
+      password: Spark2017!@#
+      driver-class-name: com.mysql.jdbc.Driver
+      type: com.alibaba.druid.pool.DruidDataSource
+      filter: wall
+      maxActive: 100
+      initialSize: 50
+      minIdle: 10
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: select 'x'
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+      poolPreparedStatements: false
+eureka:
+  client:
+    registryFetchIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: http://10.47.126.122:7000/eureka/,http://10.25.168.205:7000/eureka/,http://10.27.7.64:7000/eureka/
+  instance:
+    preferIpAddress: true
+    leaseRenewalIntervalInSeconds: 10
+project:
+  logstash:
+    uri: 10.46.74.43:4560
+  mUrl: http://m.cg.sparke.cn
+  shareBaseUrl: http://share.sparke.cn
+  cacheSuffix: sparke
+  cache:
+    level:  ali
+  ali:
+    ocs:
+      uid: m-bp1508d030a08a64
+      pwd: Sparke2017
+      url: m-bp1508d030a08a64.memcache.rds.aliyuncs.com:11211
+    pay:
+      app_id: 2017041406715111
+      server_url: https://openapi.alipay.com/gateway.do
+      private_key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCDE2ycsI6Ml51Y/SuXuWaAaVtCvQc2mtlrJX4HdvDpDQZMdxkhyWgBJTzWbImoUi5QqW2Sye6vvcgVgNBRfVQBSnpoEDsaSLbKe61VIyAzmS1tXCNbWxu2YiYqa5Y01wTQ6AlTEFsD9akD/5053uEmE7HP47Q9BwPXcbOesEXu/eLrs4lpXCwSrzF3GxTURXYPVNSzvwXQNS2b/t2IrKtGlXrFqCQEOCbWt+nCNPgO5vKy0arzyvenSc8Qf8rJAYQuF8131ep/aN07P8iNXHGLZVTAEQ+IJaJZ7XXYJA5jf0Pj0DY+7wMuoaX7kQZg9IgJf4pVXWdm3fmHOcxjcCkpAgMBAAECggEAdbIYYa4LoeR17jUOUqOwjXeM8aVId9idh59Xxh4f/jOqxzheAb+WuwiT0zoMdW6tldI8yIS35Wf05JIQ/EscBji5Jv4EA/rs324kWwE6ZfqSFtOYD+0EOkVxXb/TVUkJUwg3bzWNdEW+6Q86P3+JDaa7kB83dWD6Kxc2oTRI52oaopCs2Iu78b8hNY27Y26cn8Z9DHfWf+Gs5vG+7Wwm8l0BlmjcoLsXLiQOdUagOOIRj2x/gF4eYEKL89yBdmm/GWO8FoxbFhhmTQYWSGAEt2tzuEGknq1r8TAvJm4wvfnAR8lynQoUDqpjyNnBPlNQN7nGn4Wxhd9AzAd4YG2OrQKBgQC8Wg+pvBcPk+O3yPaTsLy++e5GnvSye9UN41pje03T0c2kEZvroUhjQtqEZWIKDR4oH6f1zweGPHhYWSMntlBzxjVoSamgkTPXvlYf/+har55lbjj6oBMdc2PLpcI8AcYVOEs3YxFcNQuiiaAeAyHIQ1rMeUOYlcoobtil0kmtpwKBgQCyJyYO1kt3BJHJYgALjgdMha4xCtQnJA1PEjmDVb/0j8G+gnqXNOPn0ZKCBUvX2DHOBKOpySB1B9q5el1kfY8w0aui6epZXP9eLwLHpFJOA3sxGNLV9g7qF/7PxqwlM4sNDZxGwyLLgDmHe7a31+KHjixNBpIxSorH0bnG3bBsrwKBgGPgXe3jj1bzVQ1fw2ENlwit/2vzXk5G2/NBW+zktaBc4G7f545LN9dq2/TYzeQGkLc2EhqGbbcA2c//dGTaiE7cC/YBGbHLTXJZu9G8Ibn05kli6VP9DiXPyltyykyHpEIcV8ZHAi2i80h9Miq3/nHzRXKn2vBOfaRzIu7LU8aBAoGAJop1n0wY81yXtXtwCw/k4FcjQhTXpMgV4P9OVe1dI6ld/rr3jnKww1wBWAORTtbEn489YOPUE71pQisIvU60hZk2in4UZtTJojSFY29XJu113z9BjWw3+cjLJWQTpdCqyl4hauWYR3Ir//VxqAAaT70gNGGxitxXfbcPe8hF/J0CgYEAon2EsWjDed3R2fk0MYdHprKvQ2M2XGJnT34ehE6W82SrhkZv4m6bCeBuk8QKhqHKxxq2c6Y30NnwsQGMwhi16F+Qn7JIrqyGtKc7ED/oIxU9cIMiOP71zaD6wKzmu+7m7PhRQXJ9STVoTahb0rZ19x+toBeQYd7Cv1HIdiQGsTk=
+      public_key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoe19s7OGbud7i42sjy27v9D75bwlwNvXcs9MKu3MFcBcz9I9azadEqZ/r8KXi7i6uZov+lXAObFb8zn4SfxEtBnWi4V8259zfgjobj5tgHk0DQxYDOAMqmnudbpDW/zMCY4vYNN/OPfDCZbR36VRg+TSNFM/BT68XJlOega9Qk8OyYyXaaLA5eXvbnbnZRKHjJ3CGXi4s9SaHRkjn4UokoRq7iLfAPiCRE6W+ICM/GZ6s/8ozZkC5PlA9fYROdXTW40ZRAruwbx5dHHrn0o12lgwHCB3qhiYgpcz4btEJX7gopJZzr1zDmoiwG3jkwddiiUnMG0XlReRPBeG00CiiQIDAQAB
+      notify_url: http://api.sparke.cn/v1/orders/pay/ali/callback
+      pc_return_url: http://pc.cg.sparke.cn/static/view/pay/paid.html
+      m_return_url: http://m.cg.sparke.cn/paySuccessful.html
+  sms: lmobile
+  lmobile:
+      url: http://cf.51welink.com/submitdata/service.asmx/g_Submit
+      sname: dlxhjykj
+      spwd: Z8ZmY1FQ
+      sprdid: 1012888
+  qiniu:
+    access_key_id: NEg0gY6JM0N-UUeGrfEz3wvX6NJFRiAXwQ-SHdjS
+    access_key_secret: 00pJ0KbemdYzpfpETC-c8wSjYgWUPZbiOY6_Gzo8
+    bucket: spark
+  weixin:
+    pay:
+      app_id: wx432d7835b0f260d7
+      mch_id: 1359812902
+      notify_url: http://api.sparke.cn/v1/orders/pay/weixin/callback
+      pay_key: sparkesparkesparkesparkesparke12
+logging:
+  level:
+    root: info
+server:
+  tomcat:
+    accept-count: 250
+    max-threads: 500
+    max-connections: 1000

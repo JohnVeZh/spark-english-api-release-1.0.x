@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.exam.mapper.ExamMapper">
+
+    <resultMap id="StructureItemResultMap" type="cn.sparke.support.modules.v1.exam.bean.paper.vo.PaperStructureItem">
+        <id column="structureId" property="id"/>
+        <result column="structureType" property="type"/>
+        <result column="structureName" property="name"/>
+        <result column="structureAlias" property="alias"/>
+        <result column="structureIsLeaf" property="isLeaf"/>
+        <result column="structureLevel" property="level"/>
+        <result column="structureParentId" property="parentId"/>
+        <result column="structureParentIds" property="parentIds"/>
+        <result column="structureSort" property="sort"/>
+        <collection property="questionList" javaType="java.util.ArrayList"
+                    ofType="cn.sparke.support.modules.v1.exam.bean.paper.vo.QuestionItem" column="questionId"
+                    resultMap="QuestionItemResultMap">
+        </collection>
+    </resultMap>
+
+    <!--用于StructureItemResultMap 引用-->
+    <resultMap id="QuestionItemResultMap" type="cn.sparke.support.modules.v1.exam.bean.paper.vo.QuestionItem">
+        <id column="questionId" property="id"/>
+        <result column="questionName" property="name"/>
+        <result column="questionContent" property="content"/>
+        <result column="questionType" property="type"/>
+        <result column="questionHasItem" property="hasItem"/>
+        <result column="questionNum" property="questionNum"/>
+        <result column="sectionCode" property="sectionCode"/>
+
+        <result column="audioUrl" property="audioUrl"/>
+        <result column="tapescripts" property="tapescripts"/>
+        <result column="translation" property="translation"/>
+        <result column="subtitleUrl" property="subtitleUrl"/>
+        <result column="subtitleSize" property="subtitleSize"/>
+        <result column="audioSize" property="audioSize"/>
+        <result column="reference" property="reference"/>
+        <result column="analysis" property="analysis"/>
+        <result column="analysisCcId" property="analysisCcId"/>
+
+        <collection property="questionItemList" javaType="java.util.ArrayList"
+                    ofType="cn.sparke.support.modules.v1.exam.bean.paper.vo.QuestionSubItem" column="questionSubId">
+            <id column="questionSubId" property="id"/>
+            <result column="questionNo" property="questionNo"/>
+            <result column="questionSubContent" property="content"/>
+            <result column="questionSubAnalysis" property="analysis"/>
+            <collection property="optionList" javaType="java.util.ArrayList"
+                        ofType="cn.sparke.support.modules.v1.exam.bean.paper.vo.OptionItem" column="optionId">
+                <id column="optionId" property="id"/>
+                <result column="optionName" property="name"/>
+                <result column="optionContent" property="content"/>
+                <result column="isAnswer" property="isAnswer"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="getPaper" resultType="cn.sparke.support.modules.v1.exam.bean.paper.vo.PaperInfo">
+        SELECT
+            tp.id AS id,
+            tp.name,
+            tp.code,
+            tp.img
+        FROM tb_paper tp
+        WHERE tp.id = #{paperId} AND tp.del_flag = 0
+        ORDER BY tp.sort
+    </select>
+
+    <select id="findPaperStructure" resultMap="StructureItemResultMap">
+        SELECT
+            tps.content_type AS structureType,
+            tqin.num AS questionNo,
+            tps.id                                                                             AS structureId,
+            tps.name                                                                           AS structureName,
+            tps.alias                                                                          AS structureAlias,
+            tps.is_leaf                                                                        AS structureIsLeaf,
+            tps.level                                                                          AS structureLevel,
+            tps.parent_id                                                                      AS structureParentId,
+            tps.parent_ids                                                                     AS structureParentIds,
+            tps.sort                                                                           AS structureSort,
+
+
+            tq.id                                                                              AS questionId,
+            tq.name                                                                            AS questionName,
+            tq.content                                                                         AS questionContent,
+            tq.type                                                                            AS questionType,
+            tq.has_item                                                                        AS questionHasItem,
+            tq.question_num                                                                    AS questionNum,
+            tq.section_code                                                                    AS sectionCode,
+
+            tql.audio_url                                                                      AS audioUrl,
+            tql.audio_size                                                                      AS audioSize,
+            tql.tapescripts,
+            tql.translation,
+            tql.subtitle_url                                                                   AS subtitleUrl,
+            tql.subtitle_size                                                                   AS subtitleSize,
+
+            tq.analysis,
+
+            if(tq.type = 3, tqt.reference, IF(tq.type = 4, tqw.reference, NULL))           AS reference,
+            if(tq.type = 3, tqt.analysis_cc_id, IF(tq.type = 4, tqw.analysis_cc_id, NULL)) AS analysisCcId,
+
+            tqi.id                                                                             AS questionSubId,
+            tqi.content                                                                        AS questionSubContent,
+            tqi.analysis                                                                       AS questionSubAnalysis,
+
+            tqo.id                                                                             AS optionId,
+            tqo.name                                                                           AS optionName,
+            tqo.content                                                                        AS optionContent,
+            tqo.is_answer                                                                      AS isAnswer
+        FROM tb_paper_structure tps
+            LEFT JOIN tb_paper_question tpq ON tps.id = tpq.structure_id AND tpq.del_flag = 0
+            LEFT JOIN tb_question tq ON tq.id = tpq.question_id AND tq.del_flag = 0
+            LEFT JOIN tb_question_item tqi ON tqi.question_id = tq.id AND tqi.del_flag = 0
+            LEFT JOIN tb_question_item_num tqin ON tqin.paper_id = #{paperId} and tqin.question_item_id = tqi.id
+            LEFT JOIN tb_question_option tqo ON tqo.item_id = tqi.id AND tqo.del_flag = 0
+
+            LEFT JOIN tb_question_translation tqt ON tqt.question_id = tq.id
+            LEFT JOIN tb_question_listening tql ON tql.question_id = tq.id
+            LEFT JOIN tb_question_writing tqw ON tqw.question_id = tq.id
+        WHERE tps.paper_id = #{paperId} AND tps.del_flag = 0
+        ORDER BY tps.sort, tpq.sort, tqi.sort, tqo.sort
+    </select>
+
+</mapper>

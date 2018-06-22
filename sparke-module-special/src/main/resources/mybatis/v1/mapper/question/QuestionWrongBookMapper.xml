@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.question.mapper.WrongBookMapper">
+    <select id="findBookList" resultMap="bookMap">
+        SELECT
+        wrong.id,
+        wrong.question_id,
+        structure.id AS structureId,
+        structure.name AS structureName,
+        question.name,
+        question.content,
+        question.type AS contentType,
+        wrong.create_date,
+        #{userId} as $userId
+        FROM tb_question_wrong_book wrong
+        INNER JOIN tb_paper_structure structure ON wrong.structure_id = structure.id
+        INNER JOIN tb_question question  ON question.id = wrong.question_id
+        WHERE wrong.user_id = #{userId} AND wrong.section_code = #{sectionCode} AND wrong.type = 1 AND question.type = #{type} AND wrong.del_flag = 0 AND question.del_flag = 0
+        ORDER BY wrong.create_date DESC
+    </select>
+    <resultMap id="bookMap" type="cn.sparke.special.modules.v1.question.bean.WrongBookBean">
+        <id property="id" column="id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="structureId" column="structureId"/>
+        <result property="structureName" column="structureName"/>
+        <result property="name" column="name"/>
+        <result property="content" column="content"/>
+        <result property="contentType" column="contentType"/>
+        <result property="createDate" column="create_date"/>
+        <association property="num" column="{userId=$userId,questionId=question_id,wrongId=id}"
+                     javaType="string" select="getNum"/>
+    </resultMap>
+    <resultMap id="infoMap" type="cn.sparke.special.modules.v1.question.bean.QuestionBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="structureId" column="structure_id"/>
+        <result property="content" column="content"/>
+        <result property="contentType" column="contentType"/>
+        <result property="hasItem" column="has_item"/>
+        <result property="questionNum" column="question_num"/>
+        <result property="sectionCode" column="section_code"/>
+        <result property="analysis" column="analysis"/>
+        <result property="audioUrl" column="audio_url"/>
+        <result property="tapescripts" column="tapescripts"/>
+        <result property="translation" column="translation"/>
+        <collection property="questionItemList" ofType="cn.sparke.special.modules.v1.question.bean.QuestionItemBean">
+            <id property="id" column="itemId"/>
+            <result property="content" column="itemContent"/>
+            <result property="analysis" column="itemAnalysis"/>
+            <association property="recordDetail" javaType="cn.sparke.special.modules.v1.record.bean.QuestionRecordDetailBean" column="{userId=userId,itemId=itemId}" select="getDetail">
+                <id property="userOptionId" column="user_option_id" jdbcType="String"/>
+                <result property="rightOptionId" column="right_option_id" jdbcType="String"/>
+                <result property="amount" column="amount" jdbcType="int"/>
+            </association>
+            <collection property="optionList" ofType="cn.sparke.special.modules.v1.question.bean.QuestionOptionBean">
+                <id property="id" column="optionId"/>
+                <result property="isAnswer" column="optionIsAnswer"/>
+                <result property="name" column="optionName"/>
+                <result property="content" column="optionContent"/>
+            </collection>
+
+        </collection>
+    </resultMap>
+    <select id="getNum" resultType="int">
+        SELECT count(1) FROM tb_question_wrong_book_detail detail
+        WHERE detail.wrong_book_id = #{wrongId}  AND detail.user_id = #{userId} AND detail.question_id = #{questionId} AND detail.del_flag = 0
+    </select>
+    <select id="getWrongBooksDetail" resultMap="infoMap">
+            SELECT
+            book.id as wrongId,
+            question.id,
+            question.name,
+            book.structure_id,
+            question.content,
+            question.type,
+            question.has_item ,
+            question.question_num ,
+            question.analysis,
+            listening.audio_url,
+            listening.tapescripts,
+            if(question.type=1,listening.translation,if(question.type = 2,reading.translation,null)) AS translation,
+            item.id as itemId,
+            item.content as itemContent,
+            item.analysis as itemAnalysis,
+            options.id AS optionId,
+            options.is_answer AS optionIsAnswer,
+            options.name AS optionName,
+            options.content AS optionContent,
+            #{userId} AS userId
+            FROM tb_question_wrong_book book
+            INNER JOIN tb_question_wrong_book_detail detail ON detail.wrong_book_id = book.id
+            INNER JOIN tb_question question ON book.question_id = question.id AND question.type = #{type}
+            LEFT JOIN tb_question_listening listening ON question.id = listening.question_id AND question.type = 1
+            LEFT JOIN tb_question_reading reading ON question.id = reading.question_id AND question.type = 2
+            LEFT JOIN tb_question_item item ON item.id = detail.question_item_id AND item.del_flag = 0 AND question.has_item = 1
+            LEFT JOIN tb_question_option options ON item.id = options.item_id AND options.del_flag = 0
+            WHERE book.id = #{wrongBookId}  ORDER BY  item.sort, options.sort
+    </select>
+    <select id="getDetail" resultType="cn.sparke.special.modules.v1.record.bean.QuestionRecordDetailBean">
+        SELECT
+        user_option_id,
+        right_option_id,
+        status
+        FROM tb_question_record_detail
+        WHERE question_item_id = #{itemId}
+        AND user_id = #{userId}
+        ORDER BY create_date DESC
+
+    </select>
+    <select id="getWrongCount" resultType="int">
+        SELECT COUNT(1) FROM tb_question_wrong_book book
+            INNER JOIN tb_question_wrong_book_detail detail
+                ON book.id = detail.wrong_book_id
+        WHERE book.user_id = #{userId} AND book.section_code = #{sectionCode} AND book.type = 1 AND book.del_flag = 0
+    </select>
+    <select id="getDetailByQuestionId" resultType="cn.sparke.special.modules.v1.question.bean.WrongBookDetailBean">
+        SELECT id FROM tb_question_wrong_book_detail WHERE user_id = #{userId} AND question_id = #{questionId} AND structure_id = #{structureId} limit 1
+    </select>
+    <select id="getByQuestionId" resultType="cn.sparke.special.modules.v1.question.bean.WrongBookBean">
+        SELECT id FROM tb_question_wrong_book WHERE user_id = #{userId} AND question_id = #{questionId} AND type = 1 AND structure_id = #{structureId} limit 1
+    </select>
+    <delete id="deleteWrongBook" >
+      DELETE FROM tb_question_wrong_book WHERE user_id = #{userId} AND question_id = #{questionId} AND type = 1
+    </delete>
+    <delete id="deleteWrongBookDetail">
+      DELETE FROM tb_question_wrong_book_detail WHERE user_id=#{userId} AND question_item_id=#{itemId}
+    </delete>
+    <insert id="insert">
+        INSERT INTO tb_question_wrong_book
+        (
+        id,
+        user_id,
+        question_id,
+        section_code,
+        structure_id,
+        structure_alias,
+        paper_id,
+        create_date,
+        update_date,
+        sort,
+        type
+        )
+        VALUES(
+        #{id},
+        #{userId},
+        #{questionId},
+        #{sectionCode},
+        #{structureId},
+        #{structureAlias},
+        #{paperId},
+        #{createDate},
+        #{updateDate},
+        #{sort},
+        #{type}
+        )
+    </insert>
+    <insert id="insertList">
+        INSERT INTO tb_question_wrong_book
+        (
+        id,
+        user_id,
+        question_id,
+        section_code,
+        structure_id,
+        structure_alias,
+        paper_id,
+        create_date,
+        update_date,
+        sort,
+        type
+        )
+        VALUES
+        <foreach collection="bookList" item="list"  separator=",">
+            (
+            #{list.id},
+            #{list.userId},
+            #{list.questionId},
+            #{list.sectionCode},
+            #{list.structureId},
+            #{list.structureAlias},
+            #{list.paperId},
+            #{list.createDate},
+            #{list.updateDate},
+            #{list.sort},
+            #{list.type}
+            )
+        </foreach>
+
+    </insert>
+    <insert id="insertDetail">
+        INSERT INTO tb_question_wrong_book_detail
+        (
+        id,
+        user_id,
+        wrong_book_id,
+        question_item_id,
+        question_id,
+        structure_id,
+        structure_alias,
+        paper_id,
+        record_details_id,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES(
+        #{id},
+        #{userId},
+        #{wrongBookId},
+        #{questionItemId},
+        #{questionId},
+        #{structureId},
+        #{structureAlias},
+        #{paperId},
+        #{recordDetailsId},
+        #{createDate},
+        #{updateDate},
+        #{sort}
+        )
+    </insert>
+    <insert id="insertDetailList">
+        INSERT INTO tb_question_wrong_book_detail
+        (
+        id,
+        user_id,
+        wrong_book_id,
+        question_item_id,
+        question_id,
+        structure_id,
+        structure_alias,
+        paper_id,
+        record_details_id,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES
+        <foreach collection="bookDetailList" item="list"  separator=",">
+        (
+        #{list.id},
+        #{list.userId},
+        #{list.wrongBookId},
+        #{list.questionItemId},
+        #{list.questionId},
+        #{list.structureId},
+        #{list.structureAlias},
+        #{list.paperId},
+        #{list.recordDetailsId},
+        #{list.createDate},
+        #{list.updateDate},
+        #{list.sort}
+        )
+        </foreach>
+    </insert>
+
+    <update id="updateList">
+        <foreach collection="bookList" separator=";" item="list">
+        UPDATE
+        tb_question_wrong_book
+        <set>
+            <if test="list.questionId!=null">
+                question_id = #{list.questionId},
+            </if>
+            <if test="list.sectionCode!=null">
+                section_code = #{list.sectionCode},
+            </if>
+            <if test="list.structureId!=null">
+                structure_id = #{list.structureId},
+            </if>
+            <if test="list.paperId!=null">
+                paper_id = #{list.paperId},
+            </if>
+            <if test="list.updateDate!=null">
+                update_date = #{list.updateDate},
+            </if>
+            <if test="list.type!=null">
+                type = #{list.type},
+            </if>
+        </set>
+        WHERE id= #{list.id} AND del_flag = 0
+        </foreach>
+    </update>
+
+    <update id="update">
+        UPDATE
+        tb_question_wrong_book
+        <set>
+            <if test="userId!=null">
+                user_id = #{userId},
+            </if>
+            <if test="questionId!=null">
+                question_id = #{questionId},
+            </if>
+            <if test="sectionCode!=null">
+                section_code = #{sectionCode},
+            </if>
+            <if test="structureId!=null">
+                structure_id = #{structureId},
+            </if>
+            <if test="structureAlias!=null">
+                structure_alias = #{structureAlias},
+            </if>
+            <if test="paperId!=null">
+                paper_id = #{paperId},
+            </if>
+            <if test="updateDate!=null">
+                update_date = #{updateDate},
+            </if>
+            <if test="sort!=null">
+                sort = #{sort},
+            </if>
+            <if test="type!=null">
+                type = #{type},
+            </if>
+        </set>
+        WHERE id= #{id} AND del_flag = 0
+    </update>
+</mapper>

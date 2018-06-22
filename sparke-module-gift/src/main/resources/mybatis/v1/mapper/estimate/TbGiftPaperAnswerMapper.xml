@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sparke.gift.modules.v1.estimate.mapper.TbGiftPaperAnswerMapper">
+    <resultMap id="BaseResultMap" type="cn.sparke.gift.modules.v1.estimate.bean.po.TbGiftPaperAnswer">
+        <id column="id" jdbcType="VARCHAR" property="id" />
+        <result column="paper_id" jdbcType="VARCHAR" property="paperId" />
+        <result column="section_code" jdbcType="TINYINT" property="sectionCode" />
+        <result column="period" jdbcType="TINYINT" property="period" />
+        <result column="question_type" jdbcType="TINYINT" property="questionType" />
+        <result column="question_no" jdbcType="INTEGER" property="questionNo" />
+        <result column="score" jdbcType="INTEGER" property="score" />
+        <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+        <result column="create_by" jdbcType="VARCHAR" property="createBy" />
+        <result column="update_date" jdbcType="TIMESTAMP" property="updateDate" />
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+        <result column="remarks" jdbcType="VARCHAR" property="remarks" />
+        <result column="sort" jdbcType="INTEGER" property="sort" />
+        <result column="del_flag" jdbcType="TINYINT" property="delFlag" />
+        <result column="answer" jdbcType="LONGVARCHAR" property="answer" />
+    </resultMap>
+
+    <select id="findListByPaperIdAndInQuestionType" resultMap="BaseResultMap">
+      SELECT *
+        FROM tb_gift_paper_answer
+        WHERE paper_id = #{paperId} and del_flag = 0
+          <foreach collection="questionTypes" item="questionType" open=" and question_type in ( " separator="," close=") " >
+              #{questionType}
+          </foreach>
+        order by sort
+    </select>
+    <select id="findListByPaperId" resultMap="BaseResultMap">
+        SELECT *
+        FROM tb_gift_paper_answer
+        WHERE paper_id = #{paperId} and del_flag = 0
+    </select>
+</mapper>

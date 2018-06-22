@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.writing.mapper.WritingTranslationMapper">
+    <resultMap id="findListMap" type="cn.sparke.support.modules.v1.writing.bean.vo.WritingTranslationVo">
+        <id column="type" property="type"/>
+        <collection property="questionList" ofType="cn.sparke.support.modules.v1.writing.bean.vo.Question">
+            <id column="questionId" property="id"/>
+            <result column="content" property="content"/>
+            <result column="analysis" property="analysis"/>
+            <result column="reference" property="reference"/>
+            <result column="type" property="type"/>
+        </collection>
+    </resultMap>
+    <select id="findWritingTranslation" resultMap="findListMap">
+        SELECT
+            twr.type,
+            tq.id                                                                          AS questionId,
+            tq.analysis,
+            IF(tq.type = 3, tqt.reference, IF(tq.type = 4, tqw.reference, NULL))           AS reference,
+            IF(tq.type = 3, tqt.analysis_cc_id, IF(tq.type = 4, tqw.analysis_cc_id, NULL)) AS analysisCcId,
+            tq.content
+
+        FROM tb_writing_translation twr
+            INNER JOIN tb_question tq ON tq.id = twr.question_id AND tq.del_flag = 0 AND tq.type IN (3, 4)
+            LEFT JOIN tb_question_translation tqt ON tqt.question_id = tq.id
+            LEFT JOIN tb_question_writing tqw ON tqw.question_id = tq.id
+        WHERE twr.section_code = #{sectionCode} AND twr.del_flag = 0
+        ORDER BY twr.type,twr.sort
+    </select>
+</mapper>

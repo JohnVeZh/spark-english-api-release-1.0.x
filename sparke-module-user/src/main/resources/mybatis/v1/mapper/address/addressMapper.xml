@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.address.mapper.AddressMapper">
+    <select id="findList" resultType="cn.sparke.user.modules.v1.address.bean.AddressBean">
+        SELECT
+            id,
+            province_id,
+            city_id,
+            county_id,
+            district_cn,
+            mobile,
+            receiver,
+            zipcode,
+            is_default,
+            detail_address
+        FROM tb_user_address
+        WHERE del_flag = 0
+              AND user_id = #{userId}
+        ORDER BY is_default DESC, create_date DESC
+    </select>
+
+    <insert id="insert">
+        INSERT INTO tb_user_address (id, is_default, user_id, province_id, city_id, county_id, district_cn, detail_address, receiver, zipcode, mobile, create_date, update_date)
+        VALUES
+            (
+                #{id},
+                #{isDefault},
+                #{userId},
+                #{provinceId},
+                #{cityId},
+                #{countyId},
+                #{districtCn},
+                #{detailAddress},
+                #{receiver},
+                #{zipcode},
+                #{mobile},
+                #{createDate},
+                #{updateDate}
+            )
+    </insert>
+
+    <update id="updateAddress">
+        UPDATE tb_user_address
+        SET
+        <if test="provinceId!=null">
+            province_id = #{provinceId},
+        </if>
+        <if test="cityId!=null">
+            city_id = #{cityId},
+        </if>
+        <if test="countyId!=null">
+            county_id = #{countyId},
+        </if>
+        <if test="districtCn!=null">
+            district_cn = #{districtCn},
+        </if>
+        <if test="detailAddress!=null">
+            detail_address = #{detailAddress},
+        </if>
+        <if test="receiver!=null">
+            receiver = #{receiver},
+        </if>
+        <if test="zipcode!=null">
+            zipcode = #{zipcode},
+        </if>
+        <if test="mobile!=null">
+            mobile = #{mobile},
+        </if>
+        <if test="isDefault!=null">
+            is_default = #{isDefault},
+        </if>
+        update_date = #{updateDate}
+        WHERE id = #{id}
+        AND user_id = #{userId}
+    </update>
+    <update id="clearDefault">
+        UPDATE tb_user_address
+        SET is_default = 0
+        WHERE user_id = #{userId}
+    </update>
+    <update id="deleteAddress">
+        UPDATE tb_user_address
+        SET del_flag = 1
+        WHERE id = #{id}
+              AND user_id = #{userId}
+    </update>
+    <select id="getById" resultType="cn.sparke.user.modules.v1.address.bean.AddressBean">
+        SELECT *
+        FROM tb_user_address
+        WHERE
+            id = #{id}
+            AND del_flag = 0
+    </select>
+</mapper>

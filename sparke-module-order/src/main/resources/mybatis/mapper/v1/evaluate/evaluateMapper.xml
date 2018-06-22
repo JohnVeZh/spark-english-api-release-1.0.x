@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.order.modules.v1.order.mapper.EvaluateMapper">
+    <select id="findScoreByProduct" resultType="int">
+        SELECT average_score
+        FROM tb_order_evaluate
+        WHERE product_id = #{productId}
+              AND del_flag = 0
+    </select>
+    <update id="updateProductScore">
+        UPDATE tb_product
+        SET evaluate_star = #{productScore},
+            evaluate_num  = evaluate_num + 1
+        WHERE id = #{productId}
+    </update>
+    <insert id="insert">
+        INSERT INTO tb_order_evaluate (id, user_id, order_detail_id, order_id, product_id, content, imgs, thinking_score, style_score,
+                                       curriculum_score, average_score, create_date)
+        VALUES
+            (
+                #{id},
+                #{userId},
+                #{orderDetailId},
+                #{orderId},
+                #{productId},
+                #{content},
+                #{imgs},
+                #{thinkingScore},
+                #{styleScore},
+                #{curriculumScore},
+                #{averageScore},
+                #{createDate}
+            )
+    </insert>
+
+    <!--根据用户和订单详情表id获取订单以及订单详情信息-->
+    <select id="getOrderDetailByUser" resultType="cn.sparke.order.modules.v1.order.entity.OrderDetailsEntity">
+        SELECT
+            od.*,
+            o.id         AS orderId,
+            o.order_code AS orderCode
+        FROM tb_order_details od
+            INNER JOIN tb_order o
+                ON od.order_id = o.id
+        WHERE od.id = #{orderDetailId}
+              AND od.is_comment = 0
+              AND o.user_id = #{userId}
+              AND o.order_status = 4
+              AND o.is_user_del = 0
+              AND o.is_admin_del = 0
+    </select>
+    <select id="findNotCommentList" resultType="string">
+        SELECT id
+        FROM tb_order_details
+        WHERE order_id = #{orderId}
+              AND is_comment = 0
+              AND del_flag = 0
+    </select>
+    <select id="findList" resultType="cn.sparke.order.modules.v1.order.entity.EvaluateEntity">
+        SELECT
+            oe.id,
+            u.nickname,
+            u.header_img,
+            oe.content,
+            oe.average_score,
+            oe.imgs,
+            oe.create_date
+        FROM tb_order_evaluate oe
+            INNER JOIN tb_user u
+                ON oe.user_id = u.id
+        WHERE oe.product_id = #{productId}
+              AND oe.del_flag = 0
+              AND u.del_flag = 0
+              AND u.user_status = 0
+        ORDER BY oe.create_date DESC
+    </select>
+</mapper>

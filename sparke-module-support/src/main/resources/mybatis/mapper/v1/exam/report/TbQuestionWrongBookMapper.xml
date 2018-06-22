@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.exam.mapper.report.TbQuestionWrongBookMapper">
+
+    <insert id="insertList">
+        insert into tb_question_wrong_book (id, user_id, type,
+        structure_id,structure_alias,section_code,
+        question_id, paper_id,
+        create_date, update_date, sort,
+        del_flag)
+        values
+        <foreach collection="questionWrongBooks" item="questionWrongBook" open="" separator=" , ">
+            (#{questionWrongBook.id,jdbcType=VARCHAR}, #{questionWrongBook.userId,jdbcType=VARCHAR}, #{questionWrongBook.type,jdbcType=VARCHAR},
+            #{questionWrongBook.structureId,jdbcType=VARCHAR}, #{questionWrongBook.structureAlias,jdbcType=VARCHAR},#{questionWrongBook.sectionCode,jdbcType=VARCHAR},
+            #{questionWrongBook.questionId,jdbcType=VARCHAR}, #{questionWrongBook.paperId,jdbcType=VARCHAR},
+            #{questionWrongBook.createDate,jdbcType=TIMESTAMP}, #{questionWrongBook.updateDate,jdbcType=TIMESTAMP},
+            #{questionWrongBook.sort,jdbcType=INTEGER},
+            #{questionWrongBook.delFlag,jdbcType=TINYINT})
+        </foreach>
+    </insert>
+    <update id="batchUpdate">
+        UPDATE tb_question_wrong_book
+        SET update_date = #{date}
+        where id
+        <foreach collection="updateWrongBookIds" item="updateWrongBookId" open=" in ( " separator=" , " close=" ) ">
+          #{updateWrongBookId}
+        </foreach>
+    </update>
+    <select id="findItemIdByPaperIdAndUserId" resultType="String">
+        SELECT question_item_id
+        FROM tb_question_wrong_book_detail
+        WHERE user_id = #{userId} AND paper_id = #{paperId};
+    </select>
+
+    <select id="findByPaperIdAndUserId" resultType="cn.sparke.support.modules.v1.exam.bean.submit.po.TbQuestionWrongBook">
+        SELECT
+            id,
+            question_id AS questionId
+        FROM tb_question_wrong_book
+        WHERE user_id = #{userId} AND paper_id = #{paperId};
+    </select>
+</mapper>

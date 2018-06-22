@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.support.modules.v1.exam.mapper.ReportMapper">
+
+    <resultMap id="ReportDetail" type="cn.sparke.support.modules.v1.exam.bean.report.vo.DetailReport">
+        <id column="id" property="id"/>
+        <result column="paperId" property="paperId"/>
+        <result column="paperStructureId" property="paperStructureId"/>
+        <result column="paperStructureName" property="paperStructureName"/>
+        <result column="createDate" property="createDate"/>
+        <collection property="structureList" javaType="ArrayList"
+                    ofType="cn.sparke.support.modules.v1.exam.bean.report.vo.DetailStructure">
+            <id column="structureId" property="id"/>
+            <result column="structureName" property="name"/>
+            <result column="didNum" property="didNum"/>
+            <result column="rightRate" property="rightRate"/>
+        </collection>
+    </resultMap>
+
+    <select id="findByUserIdAndSectionCode"
+            resultType="cn.sparke.support.modules.v1.exam.bean.report.vo.ReportListItem">
+        SELECT
+            tqr.id  AS id,
+            tp.name AS paperName
+        FROM tb_question_report tqr
+            LEFT JOIN tb_paper tp ON tp.id = tqr.paper_id
+        WHERE
+            tqr.user_id = #{userId} AND tqr.section_code = #{sectionCode} AND tqr.del_flag = 0 AND tqr.catalog_type = 2
+        ORDER BY tqr.create_date, tp.sort, tqr.sort
+    </select>
+    <select id="getReportDetail" resultMap="ReportDetail">
+        SELECT
+            tqr.id,
+            tqr.paper_id              AS paperId,
+            tqr.paper_structure_id    AS paperStructureId,
+            tqr.paper_structure_alias AS paperStructureName,
+            tqr.create_date           AS createDate,
+
+            tqrd.structure_id         AS structureId,
+            tqrd.structure_alias      AS structureName,
+            tqrd.did_num              AS didNum,
+            tqrd.right_rate           AS rightRate
+
+        FROM tb_question_report tqr
+            LEFT JOIN tb_question_report_detail tqrd ON tqrd.report_id = tqr.id AND tqrd.del_flag = 0
+        WHERE tqr.id = #{reportId} AND tqr.del_flag = 0
+        ORDER BY tqrd.sort
+    </select>
+
+    <resultMap id="UserAllReport" type="cn.sparke.support.modules.v1.exam.bean.report.vo.ReportStructure">
+        <!--<id column="reportId" property="reportId"/>-->
+        <result column="name" property="name"/>
+        <collection property="children" ofType="cn.sparke.support.modules.v1.exam.bean.report.vo.ReportQuestionItem">
+            <result column="tempId" property="tempId"/>
+            <result column="structureName" property="name"/>
+            <result column="didNum" property="didNum"/>
+            <result column="rightNum" property="rightNum"/>
+            <result column="totalNum" property="totalNum"/>
+            <result column="rightRate" property="rightRate"/>
+        </collection>
+    </resultMap>
+    <!-- tqr.id AS reportId,-->
+    <select id="findReportByReportId" resultMap="UserAllReport">
+        SELECT
+            tqr.paper_structure_alias AS `name`,
+            tqrd.structure_alias      AS structureName,
+            tqrd.did_num              AS didNum,
+            tqrd.right_rate           AS rightRate
+        FROM tb_question_report tqr
+            LEFT JOIN tb_question_report_detail tqrd ON tqrd.report_id = tqr.id AND tqrd.del_flag = 0
+        WHERE tqr.id = #{reportId} AND tqr.del_flag = 0 AND tqr.type = 2
+    </select>
+    <select id="findReportByUserIdAndSectionCode" resultMap="UserAllReport">
+        SELECT
+
+            tqr.paper_structure_alias AS `name`,
+            tqrd.id AS tempId,
+            tqrd.structure_alias      AS structureName,
+            tqrd.right_num AS rightNum,
+            tqrd.total_num AS totalNum,
+            tqrd.did_num              AS didNum,
+            tqrd.right_rate           AS rightRate
+        FROM tb_question_report tqr
+            LEFT JOIN tb_question_report_detail tqrd ON tqrd.report_id = tqr.id AND tqrd.del_flag = 0
+            LEFT JOIN tb_paper_structure tps on tqr.paper_id = tps.paper_id AND tps.del_flag = 0
+        WHERE tqr.user_id = #{userId} AND tqr.section_code = #{sectionCode} AND tqr.del_flag = 0 AND tqr.type = 2 AND tqr.catalog_type = 2
+    </select>
+    <resultMap id="Report" type="cn.sparke.support.modules.v1.exam.bean.report.vo.Report">
+        <id column="reportId" property="reportId"/>
+        <result column="paperRightRate" property="rightRate"/>
+        <collection property="structureList" ofType="cn.sparke.support.modules.v1.exam.bean.report.vo.ReportStructure">
+            <result column="paperStructureId" property="structureId"/>
+            <result column="paperStructureName" property="name"/>
+            <collection property="children" ofType="cn.sparke.support.modules.v1.exam.bean.report.vo.ReportQuestionItem">
+                <result column="structureId" property="structureId"/>
+                <result column="structureName" property="name"/>
+                <result column="totalNum" property="totalNum"/>
+                <result column="didNum" property="didNum"/>
+                <result column="rightRate" property="rightRate"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="getReportVoById" resultMap="Report">
+        SELECT
+            tqr.id AS reportId,
+            tqr.paper_structure_id    AS paperStructureId,
+            tqr.paper_structure_alias AS paperStructureName,
+            tqr.right_rate AS paperRightRate,
+            tqrd.structure_id         AS structureId,
+            tqrd.structure_alias      AS structureName,
+            tqrd.did_num              AS didNum,
+            tqrd.total_num AS totalNum,
+            tqrd.right_rate           AS rightRate
+
+        FROM tb_question_report tqr
+            LEFT JOIN tb_question_report_detail tqrd ON tqrd.report_id = tqr.id AND tqrd.del_flag = 0
+        WHERE tqr.id = #{reportId} AND tqr.del_flag = 0
+        ORDER BY tqrd.sort
+    </select>
+</mapper>

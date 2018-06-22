@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.paper.mapper.PaperMapper">
+    <select id="findList" resultMap="paperMap">
+        SELECT
+            paper.id,
+            paper.name,
+            paper.code,
+            paper.question_num as total,
+            paper.content_type,
+            if(paper.content_type = 1 or paper.content_type=2,(SELECT ifnull(SUM(report.total_num),0)
+            FROM tb_paper_structure structure INNER JOIN tb_question_report report  ON report.paper_structure_id = structure.id AND structure.del_flag = 0
+            WHERE report.paper_id = paper.id AND report.user_id = #{userId} AND report.catalog_type = 1 AND report.del_flag = 0 ),
+               if(paper.content_type = 3 or paper.content_type=4,(SELECT count(1) FROM tb_question_record record
+                   INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+               WHERE record.paper_id = paper.id AND record.user_id = #{userId} AND record.type = 1 AND record.del_flag = 0 ),0) )as didNum
+        FROM tb_paper_catalog catalogs
+            INNER JOIN tb_paper paper on paper.catalog_id = catalogs.id and catalogs.type = 4 AND catalogs.section_code = #{sectionCode} and paper.del_flag= 0 and catalogs.del_flag = 0
+        order by paper.sort
+  </select>
+    <resultMap id="paperMap" type="cn.sparke.special.modules.v1.paper.bean.PaperBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="code" column="code"/>
+        <result property="total" column="total"/>
+        <result property="contentType" column="content_type"/>
+        <result property="didNum" column="didNum"/>
+    </resultMap>
+    <select id="getDidNum" resultType="int">
+        <choose>
+            <when test="contentType==1 or contentType == 2">
+                SELECT ifnull(SUM(report.total_num),0)
+                FROM tb_paper_structure structure INNER JOIN tb_question_report report  ON report.paper_structure_id = structure.id AND structure.del_flag = 0
+                WHERE report.paper_id = #{paperId} AND report.user_id = #{userId} AND report.catalog_type = 1 AND report.del_flag = 0
+            </when>
+            <when test="contentType==3 or contentType == 4">
+                SELECT count(1) FROM tb_question_record record INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0 WHERE record.paper_id = #{paperId} AND record.user_id = #{userId} AND record.type = 1 AND record.del_flag = 0
+            </when>
+            <otherwise>
+                SELECT 0;
+            </otherwise>
+        </choose>
+
+    </select>
+    <select id="findWordList" resultMap="wordMap">
+        SELECT
+        catalogs.id,
+        catalogs.name,
+        catalogs.code,
+        catalogs.total_num AS total,
+        5 AS content_type,
+        #{userId} as userId,
+        #{sectionCode} as sectionCode
+        FROM tb_word_catalog catalogs
+        where catalogs.level=1 and catalogs.section_code = #{sectionCode} and catalogs.type = 2
+        order by catalogs.sort desc;
+    </select>
+    <resultMap id="wordMap" type="cn.sparke.special.modules.v1.paper.bean.PaperBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="code" column="code"/>
+        <result property="contentType" column="content_type"/>
+        <result property="total" column="total"/>
+        <!--<association property="total" column="{catalogId=id,sectionCode=sectionCode}"-->
+                     <!--javaType="int" select="getWordTotal"/>-->
+        <association property="didNum" column="{catalogId=id,sectionCode=sectionCode,userId=userId}"
+                     javaType="int" select="getWordDidNum"/>
+    </resultMap>
+    <select id="getWordTotal" resultType="int">
+        SELECT count(1) FROM tb_word word
+        INNER JOIN tb_word_catalog catalog ON word.catalog_id = catalog.id
+        WHERE catalog.level = 3
+              AND section_code = #{sectionCode} AND type = 2
+              AND MATCH (parent_ids) AGAINST (#{catalogId} IN NATURAL LANGUAGE MODE)
+              AND catalog.del_flag = 0
+              AND word.del_flag = 0
+    </select>
+    <select id="getWordDidNum" resultType="int">
+        SELECT ifnull(SUM(total_num),0)
+        FROM tb_word_user_report
+        WHERE  MATCH (parent_catalog_ids) AGAINST (#{catalogId} IN NATURAL LANGUAGE MODE)
+        and del_flag = 0 and user_id = #{userId} AND section_code = #{sectionCode}
+    </select>
+</mapper>

@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.report.mapper.QuestionReportMapper">
+    <!--<select id="getRightWordTotal" resultType="int">-->
+        <!--SELECT sum() FROM  tb_word_user_report where user_id = #{userId} AND del_flag = 0-->
+    <!--</select>-->
+    <select id="getExistReport" resultType="String">
+        SELECT report.id  FROM tb_question_report report
+            INNER JOIN tb_paper_structure structure ON report.paper_structure_id = structure.id AND structure.del_flag = 0
+            INNER JOIN tb_question_report_record rr ON report.id = rr.report_id  AND report.question_id = #{questionId} AND report.user_id = #{userId} AND report.catalog_type = 1 AND report.del_flag = 0
+            INNER JOIN tb_question_record record ON rr.record_id = record.id AND record.del_flag = 0
+            INNER JOIN tb_question_record_detail detail ON detail.question_record_id = record.id AND detail.del_flag = 0  LIMIT 1
+    </select>
+    <select id="getListeningTotal" resultType="int">
+        SELECT ifnull(sum(paper.question_num),0)
+        FROM tb_paper_catalog catalogs
+        INNER JOIN tb_paper paper ON catalogs.id = paper.catalog_id
+        WHERE catalogs.type = 4 AND catalogs.level = 1 AND paper.content_type = 1 AND catalogs.section_code = #{sectionCode}
+        AND catalogs.del_flag = 0 AND paper.del_flag = 0
+    </select>
+    <select id="getDidAndRightListeningTotal" resultType="cn.sparke.special.modules.v1.report.bean.NumBean" >
+        SELECT
+        ifnull(SUM(report.total_num),0) AS didTotal,
+        ifnull(SUM(report.right_num),0) AS rightTotal
+        FROM tb_paper_catalog catalogs
+        INNER JOIN tb_paper paper ON catalogs.id = paper.catalog_id
+        AND catalogs.type = 4 AND catalogs.level = 1 AND paper.content_type = 1 AND catalogs.section_code = #{sectionCode}
+        AND catalogs.del_flag = 0 AND paper.del_flag = 0
+        INNER JOIN tb_question_report report ON report.paper_id = paper.id
+        AND report.user_id = #{userId} AND report.del_flag = 0
+    </select>
+    <select id="getReadingTotal" resultType="int">
+        SELECT ifnull(sum(paper.question_num),0)
+        FROM tb_paper_catalog catalogs
+        INNER JOIN tb_paper paper ON catalogs.id = paper.catalog_id
+        WHERE catalogs.type = 4 AND catalogs.level = 1 AND paper.content_type = 2 AND catalogs.section_code = #{sectionCode}
+        AND catalogs.del_flag = 0 AND paper.del_flag = 0
+    </select>
+    <select id="getDidAndReadingTotal" resultType="cn.sparke.special.modules.v1.report.bean.NumBean">
+        SELECT
+        ifnull(SUM(report.total_num),0) AS didTotal,
+        ifnull(SUM(report.right_num),0) AS rightTotal
+        FROM tb_paper_catalog catalogs
+        INNER JOIN tb_paper paper ON catalogs.id = paper.catalog_id
+        AND catalogs.type = 4 AND catalogs.level = 1 AND paper.content_type = 2 AND catalogs.section_code = #{sectionCode}
+        AND catalogs.del_flag = 0 AND paper.del_flag = 0
+        INNER JOIN tb_question_report report ON report.paper_id = paper.id
+        AND report.user_id = #{userId} AND report.del_flag = 0
+    </select>
+    <select id="getTranslationTotal" resultType="int">
+        SELECT ifnull(sum(paper.question_num),0)
+        FROM tb_paper_catalog catalogs
+        INNER JOIN tb_paper paper ON catalogs.id = paper.catalog_id
+        WHERE catalogs.type = 4 AND catalogs.level = 1 AND paper.content_type = 3 AND catalogs.section_code = #{sectionCode}
+        AND catalogs.del_flag = 0 AND paper.del_flag = 0
+    </select>
+    <select id="getEasyTranslationTotal"  resultType="int">
+        SELECT
+        COUNT(1)
+        FROM tb_question_record record
+        WHERE section_code = #{sectionCode}
+        AND user_id = #{userId}
+        AND type=1
+        AND question_type = 3
+        AND difficulty_level = 1
+    </select>
+    <select id="getSecondaryTranslationTotal"  resultType="int">
+        SELECT
+        COUNT(1)
+        FROM tb_question_record record
+        WHERE section_code = #{sectionCode}
+        AND user_id = #{userId}
+        AND type=1
+        AND question_type = 3
+        AND difficulty_level = 2
+    </select>
+    <select id="getDifficultTranslationTotal"  resultType="int">
+        SELECT
+        COUNT(1)
+        FROM tb_question_record record
+        WHERE section_code = #{sectionCode}
+        AND user_id = #{userId}
+        AND type=1
+        AND question_type = 3
+        AND difficulty_level = 3
+    </select>
+    <select id="getWritingTotal" resultType="int">
+        SELECT ifnull(sum(paper.question_num),0)
+        FROM tb_paper_catalog catalogs
+        INNER JOIN tb_paper paper ON catalogs.id = paper.catalog_id
+        WHERE catalogs.type = 4 AND catalogs.level = 1 AND paper.content_type = 4 AND section_code = #{sectionCode}
+        AND catalogs.del_flag = 0 AND paper.del_flag = 0
+    </select>
+    <select id="getEasyWritingTotal"  resultType="int">
+        SELECT
+        COUNT(1)
+        FROM tb_question_record record
+        WHERE section_code = #{sectionCode}
+        AND user_id = #{userId}
+        AND type=1
+        AND question_type = 4
+        AND difficulty_level = 1
+    </select>
+    <select id="getSecondaryWritingTotal"  resultType="int">
+        SELECT
+        COUNT(1)
+        FROM tb_question_record record
+        WHERE section_code = #{sectionCode}
+        AND user_id = #{userId}
+        AND type=1
+        AND question_type = 4
+        AND difficulty_level = 2
+    </select>
+    <select id="getDifficultWritingTotal"  resultType="int">
+        SELECT
+        COUNT(1)
+        FROM tb_question_record record
+        WHERE section_code = #{sectionCode}
+        AND user_id = #{userId}
+        AND type=1
+        AND question_type = 4
+        AND difficulty_level = 3
+    </select>
+    <select id="getSuggestion" resultType="cn.sparke.special.modules.v1.report.bean.SpecialSuggestionBean">
+        SELECT
+        analysis,
+        suggestion
+        FROM tb_special_suggestion sug
+        WHERE type = #{type}
+        AND start &lt;= #{score}
+        AND end >= #{score}
+        AND section_code =#{sectionCode} limit 1
+    </select>
+
+
+
+    <select id="getReport" resultMap="reportMap" >
+        SELECT
+         report.id,
+         report.paper_id,
+         report.paper_structure_id,
+         report.use_time,
+         report.total_num,
+         report.did_num,
+         report.not_done_num,
+         report.right_num,
+         report.wrong_num,
+         report.right_rate,
+         report.create_date,
+         record.question_id,
+         detail.question_item_id,
+         detail.status,
+         detail.user_option_id,
+         detail.right_option_id,
+         #{userId} AS userId,
+         #{sectionCode} AS sectionCode
+         FROM tb_question_report report
+          INNER JOIN tb_paper_structure structure ON report.paper_structure_id = structure.id AND structure.del_flag = 0
+         INNER JOIN tb_question_report_record rr ON report.id = rr.report_id AND report.del_flag = 0 AND report.catalog_type = 1
+         <if test="type == 1">
+             AND report.id = #{contentId}
+         </if>
+        <if test="type == 2">
+            AND report.question_id = #{contentId} AND report.user_id = #{userId}
+        </if>
+        INNER JOIN tb_question_record record ON rr.record_id = record.id AND record.del_flag = 0
+        INNER JOIN tb_question_record_detail detail ON detail.question_record_id = record.id AND detail.del_flag = 0
+        ORDER BY detail.sort
+
+
+    </select>
+
+
+    <resultMap id="reportMap" type="cn.sparke.special.modules.v1.report.bean.QuestionReportBean">
+        <id property="id" column="id" />
+        <result property="paperId" column="paper_id" />
+        <result property="paperStructureId" column="paper_structure_id" />
+        <result property="useTime" column="use_time" />
+        <result property="totalNum" column="total_num" />
+        <result property="didNum" column="did_num" />
+        <result property="notDoneNum" column="not_done_num" />
+        <result property="rightNum" column="right_num" />
+        <result property="wrongNum" column="wrong_num" />
+        <result property="rightRate" column="right_rate" />
+        <result property="createDate" column="create_date" />
+        <association property="nextQuestion" javaType="cn.sparke.special.modules.v1.report.bean.QuestionReportBean"
+                     column="{userId=userId,structureId=paper_structure_id,sectionCode=sectionCode}" select="getNextQuestion" />
+        <association property="question" javaType="cn.sparke.special.modules.v1.question.bean.QuestionBean">
+            <id property="id" column="question_id"/>
+            <collection property="questionItemList" ofType="cn.sparke.special.modules.v1.question.bean.QuestionItemBean">
+                <id property="id" column="question_item_id"/>
+                <result property="status" column="status"/>
+                <result property="userOptionId" column="user_option_id"/>
+                <result property="rightOptionId" column="right_option_id"/>
+            </collection>
+        </association>
+
+    </resultMap>
+    <select id="getNextQuestion" resultType="cn.sparke.special.modules.v1.question.bean.QuestionBean">
+        <if test="userId == null or userId == ''">
+          SELECT NULL ;
+        </if>
+        <if test="userId != null and userId != ''">
+            SELECT
+            q.id,
+            q.`name`,
+            q.question_num
+            FROM
+            tb_question q INNER JOIN tb_paper_question pq ON q.id = pq.question_id WHERE pq.structure_id = #{structureId} AND
+            NOT EXISTS (
+            SELECT r.question_id
+            FROM tb_question_report r
+            WHERE q.id = r.question_id
+            AND r.user_id =#{userId}
+            AND r.section_code=#{sectionCode}
+            AND r.paper_structure_id  = #{structureId}
+            AND r.catalog_type = 1
+            )
+            ORDER BY pq.sort limit 1
+        </if>
+    </select>
+    <insert id="insertReportRecordList">
+        INSERT INTO tb_question_report_record
+        (
+        id,
+        report_id,
+        record_id,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES
+        <foreach collection="reportRecordList" item="list" separator=",">
+            (
+            #{list.id},
+            #{list.reportId},
+            #{list.recordId},
+            #{list.createDate},
+            #{list.updateDate},
+            #{list.sort}
+            )
+        </foreach>
+
+    </insert>
+    <insert id="insertReportRecord">
+        INSERT INTO tb_question_report_record
+        (
+        id,
+        report_id,
+        record_id,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES
+            (
+            #{id},
+            #{reportId},
+            #{recordId},
+            #{createDate},
+            #{updateDate},
+            #{sort}
+            )
+    </insert>
+    <insert id="insert">
+        INSERT INTO tb_question_report
+        (
+        id,
+        user_id,
+        paper_id,
+        paper_structure_id,
+        paper_structure_alias,
+        question_id,
+        type,
+        catalog_type,
+        section_code,
+        use_time,
+        total_num,
+        did_num,
+        not_done_num,
+        right_num,
+        wrong_num,
+        right_rate,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES
+        (
+        #{id},
+        #{userId},
+        #{paperId},
+        #{paperStructureId},
+        #{paperStructureAlias},
+        #{questionId},
+        #{type},
+        #{catalogType},
+        #{sectionCode},
+        #{useTime},
+        #{totalNum},
+        #{didNum},
+        #{notDoneNum},
+        #{rightNum},
+        #{wrongNum},
+        #{rightRate},
+        #{createDate},
+        #{updateDate},
+        #{sort}
+        )
+    </insert>
+    <delete id="deleteReportAndReportRecord">
+        DELETE report,record
+        FROM tb_question_report report
+            LEFT JOIN tb_question_report_record record
+                ON report.id  = record.report_id
+        WHERE report.user_id=#{userId}
+              AND report.section_code = #{sectionCode}
+              AND report.question_id = #{questionId}
+              AND report.catalog_type = 1
+              AND report.paper_structure_id = #{paperStructureId}
+    </delete>
+    <delete id="deleteReport">
+        DELETE report,rr
+        FROM tb_question_report report
+            LEFT JOIN tb_question_report_record rr
+                ON report.id = rr.report_id
+        WHERE user_id=#{userId}
+              AND section_code = #{sectionCode}
+              AND question_id = #{questionId}
+              AND catalog_type = 1
+              AND paper_structure_id = #{paperStructureId}
+    </delete>
+
+
+    <select id="getPaperList" resultType="cn.sparke.special.modules.v1.paper.bean.PaperBean">
+        SELECT paper.question_num,paper.content_type
+        FROM tb_paper_catalog catalogs
+        INNER JOIN tb_paper paper ON catalogs.id = paper.catalog_id
+        WHERE catalogs.type = 4 AND catalogs.level = 1  AND catalogs.section_code = #{sectionCode}
+        AND catalogs.del_flag = 0 AND paper.del_flag = 0
+    </select>
+    <select id="getDidAndRightTotal" resultType="cn.sparke.special.modules.v1.report.bean.QuestionReportBean">
+        SELECT
+            report.total_num,
+            report.right_num,
+            paper.content_type as paperType
+        FROM tb_paper_catalog catalogs
+            INNER JOIN tb_paper paper ON catalogs.id = paper.catalog_id
+                                         AND catalogs.type = 4 AND catalogs.level = 1  AND catalogs.section_code = #{sectionCode}
+                                         AND catalogs.del_flag = 0 AND paper.del_flag = 0
+            INNER JOIN tb_question_report report ON report.paper_id = paper.id
+                                                    AND report.user_id = #{userId} AND report.del_flag = 0
+    </select>
+
+    <select id="getDifficultyLevelTotal"  resultType="cn.sparke.special.modules.v1.record.bean.QuestionRecordBean">
+        SELECT
+            question_type,difficulty_level
+        FROM tb_question_record record
+        WHERE section_code = #{sectionCode}
+              AND user_id = #{userId}
+              AND type=1 AND (question_type = 3 OR question_type = 4)
+    </select>
+</mapper>

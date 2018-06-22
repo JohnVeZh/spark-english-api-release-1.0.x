@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.order.modules.v1.order.mapper.OrderMapper">
+    <!--生成订单详情以及订单详情搭配-->
+    <resultMap id="generateOrderDetailListMap" type="cn.sparke.order.modules.v1.order.entity.OrderDetailsEntity">
+        <id column="productId" property="productId"/>
+        <result column="productName" property="productName"/>
+        <result column="productImg" property="productImg"/>
+        <result column="productPrice" property="productPrice"/>
+        <result column="productType" property="productType"/>
+        <result column="isSend" property="isSend"/>
+        <result column="isPostage" property="isPostage"/>
+        <result column="postage" property="postage"/>
+        <collection property="orderDetailsCollectionList"
+                    ofType="cn.sparke.order.modules.v1.order.entity.OrderDetailsCollection">
+            <id column="poParentProductId" property="parentProductId"/>
+            <result column="coProductId" property="productId"/>
+            <result column="coProductPrice" property="productPrice"/>
+            <result column="coProductName" property="productName"/>
+            <result column="coProductImg" property="productImg"/>
+            <result column="coType" property="type"/>
+        </collection>
+    </resultMap>
+    <select id="generateOrderDetailList" resultMap="generateOrderDetailListMap">
+        SELECT
+        p.id AS productId,
+        p.name AS productName,
+        p.list_img AS productImg,
+        p.present_price AS productPrice,
+        p.type AS productType,
+        p.is_send as isSend,
+        p.is_postage as isPostage,
+        p.postage,
+        po.parent_product_id AS poParentProductId,
+        po.product_id AS coProductId,
+        po.product_price AS coProductPrice,
+        po.product_name AS coProductName,
+        po.product_img AS coProductImg,
+        po.type AS coType
+        FROM tb_product p
+        LEFT JOIN tb_product_collection po
+        ON p.id = po.parent_product_id AND po.del_flag = 0
+        WHERE p.del_flag = 0
+        AND p.is_show = 1
+        AND p.id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item.productId}
+        </foreach>
+    </select>
+    <!--插入订单-->
+    <insert id="insert">
+        INSERT INTO tb_order (id,
+                              user_id,
+                              type,
+                              order_code,
+                              pay_type,
+                              pay_price,
+                              order_price,
+                              total_product_price,
+                              discount_price,
+                              postage_price,
+                              product_num,
+                              pay_time,
+                              from_type,
+                              is_send,
+                              coupon_id,
+                              redeem_id,
+                              order_status,
+                              create_date,
+                              update_date,
+                              remarks
+        )
+        VALUES
+            (
+                #{id},
+                #{userId},
+                #{type},
+                #{orderCode},
+                #{payType},
+                #{payPrice},
+                #{orderPrice},
+                #{totalProductPrice},
+                #{discountPrice},
+                #{postagePrice},
+                #{productNum},
+                #{payTime},
+                #{fromType},
+                #{isSend},
+                #{couponId},
+                #{redeemId},
+                #{orderStatus},
+                #{createDate},
+                #{updateDate},
+                #{remarks}
+            )
+    </insert>
+    <!--插入订单详情表-->
+    <insert id="batchInsertDetails">
+        INSERT INTO tb_order_details (id, order_id, product_id, num, product_name, product_img,
+        product_price,product_type,
+        deal_price,discount_price, has_collection, create_date, update_date)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.id},
+            #{item.orderId},
+            #{item.productId},
+            #{item.num},
+            #{item.productName},
+            #{item.productImg},
+            #{item.productPrice},
+            #{item.productType},
+            #{item.dealPrice},
+            #{item.discountPrice},
+            #{item.hasCollection},
+            #{item.createDate},
+            #{item.updateDate}
+            )
+        </foreach>
+    </insert>
+    <!--插入订单详情搭配表-->
+    <insert id="batchInsertDetailCollection">
+        INSERT INTO tb_order_details_collection (id, order_detail_id, product_id, product_price, product_name,
+        product_img, type, num, create_date, update_date)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.id},
+            #{item.orderDetailId},
+            #{item.productId},
+            #{item.productPrice},
+            #{item.productName},
+            #{item.productImg},
+            #{item.type},
+            #{item.num},
+            #{item.createDate},
+            #{item.updateDate}
+            )
+        </foreach>
+    </insert>
+    <!--插入物流表-->
+    <insert id="insertLogistic">
+        INSERT tb_order_logistics (id, order_id, province_id, city_id, county_id, province_city_cn, zipcode, receiver, receive_mobile, receive_address, create_date, update_date)
+        VALUES
+            (
+                #{id},
+                #{orderId},
+                #{provinceId},
+                #{cityId},
+                #{countyId},
+                #{provinceCityCn},
+                #{zipcode},
+                #{receiver},
+                #{receiveMobile},
+                #{receiveAddress},
+                #{createDate},
+                #{updateDate}
+            )
+    </insert>
+    <!--清除购物车-->
+    <delete id="clearShopping">
+        DELETE FROM tb_product_shopping_cart
+        WHERE id
+        IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <!--判断用户是否已经拥有网课-->
+    <select id="existNetworkProductList" resultType="string">
+        SELECT
+        network.product_id
+        FROM tb_user_network_course user_network
+        INNER JOIN tb_product_network_course network
+        ON user_network.network_course_id = network.id
+        WHERE user_network.del_flag = 0
+        AND user_network.status = 1
+        AND user_network.user_id = #{userId}
+        AND network.product_id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item.productId}
+        </foreach>
+    </select>
+    <!--根据兑换码获取订单详情-->
+    <select id="redeemProductByCode" resultType="cn.sparke.order.modules.v1.order.entity.OrderDetailsEntity">
+        SELECT
+            p.id            AS productId,
+            p.name          AS productName,
+            p.list_img      AS productImg,
+            p.present_price AS productPrice,
+            p.type          AS productType,
+            p.is_send,
+            redeem_code.network_course_id,
+            redeem_code.id  AS redeemId
+        FROM tb_product_network_course_redeem_code redeem_code
+            INNER JOIN tb_product_network_course nc
+                ON redeem_code.network_course_id = nc.id
+            INNER JOIN tb_product p
+                ON nc.product_id = p.id
+        WHERE redeem_code.code = #{code}
+              AND redeem_code.del_flag = 0
+              AND redeem_code.is_enable = 1
+              AND redeem_code.status = 0
+              AND p.del_flag = 0
+              AND now() &gt;= redeem_code.start_time AND now() &lt;= redeem_code.end_time
+              AND nc.status IN (1, 2, 3)
+    </select>
+    <!--插入用户网课关系-->
+    <insert id="batchInsertUserNetwork">
+        INSERT INTO tb_user_network_course (id, user_id, network_course_id, type, create_date, update_date)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.id},
+            #{item.userId},
+            #{item.networkCourseId},
+            #{item.type},
+            #{item.createDate},
+            #{item.updateDate}
+            )
+        </foreach>
+    </insert>
+    <resultMap id="getMap" type="cn.sparke.order.modules.v1.order.entity.OrderEntity">
+        <id column="id" property="id"/>
+        <result column="type" property="type"/>
+        <result column="order_status" property="orderStatus"/>
+        <result column="order_code" property="orderCode"/>
+        <result column="pay_type" property="payType"/>
+        <result column="order_price" property="orderPrice"/>
+        <result column="total_product_price" property="totalProductPrice"/>
+        <result column="discount_price" property="discountPrice"/>
+        <result column="total_product_price" property="totalProductPrice"/>
+        <result column="postage_price" property="postagePrice"/>
+        <result column="product_num" property="productNum"/>
+        <result column="pay_time" property="payTime"/>
+        <result column="is_send" property="isSend"/>
+        <result column="create_date" property="createDate"/>
+        <result column="remarks" property="remarks"/>
+        <association property="logisticsInfo" javaType="cn.sparke.order.modules.v1.order.entity.OrderLogisticsEntity">
+            <id column="lId" property="id"/>
+            <result column="lProvinceId" property="provinceId"/>
+            <result column="lCityId" property="cityId"/>
+            <result column="lCountyId" property="countyId"/>
+            <result column="lProvinceCityCn" property="provinceCityCn"/>
+            <result column="lZipcode" property="zipcode"/>
+            <result column="lReceiver" property="receiver"/>
+            <result column="lReceiveMobile" property="receiveMobile"/>
+            <result column="lReceiveAddress" property="receiveAddress"/>
+            <result column="lDeliveryTime" property="deliveryTime"/>
+            <result column="lExpressCode" property="expressCode"/>
+            <result column="lExpressName" property="expressName"/>
+            <result column="lLogisticsCode" property="logisticsCode"/>
+        </association>
+        <collection property="orderDetailsList" ofType="cn.sparke.order.modules.v1.order.entity.OrderDetailsEntity">
+            <id column="odId" property="id"/>
+            <result column="odProductId" property="productId"/>
+            <result column="odNum" property="num"/>
+            <result column="odProductImg" property="productImg"/>
+            <result column="odProductType" property="productType"/>
+            <result column="odProductName" property="productName"/>
+            <result column="odProductPrice" property="productPrice"/>
+            <result column="odRefundStatus" property="refundStatus"/>
+            <result column="odIsComment" property="isComment"/>
+            <collection property="orderDetailsCollectionList"
+                        ofType="cn.sparke.order.modules.v1.order.entity.OrderDetailsEntity">
+                <id column="odcId" property="odcId"/>
+                <result column="odcProductId" property="productId"/>
+                <result column="odcProductPrice" property="productPrice"/>
+                <result column="odcProductName" property="productName"/>
+                <result column="odcProductImg" property="productImg"/>
+                <result column="odcType" property="type"/>
+                <result column="odcNum" property="num"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <!--订单详情-->
+    <select id="get" resultMap="getMap">
+        SELECT
+            o.id,
+            o.type,
+            o.order_status,
+            o.order_code,
+            o.pay_type,
+            o.order_price,
+            o.total_product_price,
+            o.discount_price,
+            o.postage_price,
+            o.product_num,
+            o.pay_time,
+            o.is_send,
+            o.create_date,
+            o.remarks,
+            l.id               AS lId,
+            l.province_id      AS lProvinceId,
+            l.city_id          AS lCityId,
+            l.county_id        AS lCountyId,
+            l.province_city_cn AS lProvinceCityCn,
+            l.zipcode          AS lZipcode,
+            l.receiver            lReceiver,
+            l.receive_mobile   AS lReceiveMobile,
+            l.receive_address  AS lReceiveAddress,
+            l.delivery_time    AS lDeliveryTime,
+            l.express_code     AS lExpressCode,
+            l.express_name     AS lExpressName,
+            l.logistics_code   AS lLogisticsCode,
+            od.id              AS odId,
+            od.product_id      AS odProductId,
+            od.num             AS odNum,
+            od.product_type    AS odProductType,
+            od.product_name    AS odProductName,
+            od.product_img     AS odProductImg,
+            od.product_price   AS odProductPrice,
+            od.refund_status   AS odRefundStatus,
+            od.is_comment      AS odIsComment,
+            odc.id             AS odcId,
+            odc.product_id     AS odcProductId,
+            odc.product_price  AS odcProductPrice,
+            odc.product_name   AS odcProductName,
+            odc.product_img    AS odcProductImg,
+            odc.type           AS odcType,
+            odc.num            AS odcNum
+        FROM tb_order o
+            INNER JOIN tb_order_details od
+                ON o.id = od.order_id
+            LEFT JOIN tb_order_details_collection odc
+                ON od.id = odc.order_detail_id
+            LEFT JOIN tb_order_logistics l
+                ON o.id = l.order_id
+        WHERE o.id = #{id}
+              AND o.is_admin_del = 0
+              AND o.is_user_del = 0
+              AND o.user_id = #{userId}
+    </select>
+
+    <select id="getByUser" resultType="cn.sparke.order.modules.v1.order.entity.OrderEntity">
+        SELECT *
+        FROM tb_order
+        WHERE
+            id = #{orderId}
+            AND user_id = #{userId}
+    </select>
+    <!--更新订单状态-->
+    <update id="updateOrderStatus">
+        UPDATE tb_order
+        SET order_status = #{status}
+        WHERE id = #{orderId}
+    </update>
+    <delete id="delete">
+        UPDATE tb_order
+        SET is_user_del = 1
+        WHERE id = #{id}
+    </delete>
+    <update id="updateCodeStatusUsed">
+        UPDATE tb_product_network_course_redeem_code
+        SET status = 1, user_id = #{userId}
+        WHERE code = #{code}
+    </update>
+    <!--更新订单详情-->
+    <update id="updateOrderDetail">
+        UPDATE tb_order_details
+        SET
+        <if test="refundStatus!=null">
+            refund_status = #{refundStatus},
+        </if>
+        <if test="isComment!=null">
+            is_comment= #{isComment},
+        </if>
+        update_date = #{updateDate}
+        WHERE id = #{id}
+    </update>
+    <resultMap id="getOrderAndDetailsByIdMap" type="cn.sparke.order.modules.v1.order.entity.OrderEntity">
+        <id column="id" property="id"/>
+        <result column="type" property="type"/>
+        <result column="user_id" property="userId"/>
+        <result column="order_status" property="orderStatus"/>
+        <result column="order_code" property="orderCode"/>
+        <result column="pay_type" property="payType"/>
+        <result column="order_price" property="orderPrice"/>
+        <result column="total_product_price" property="totalProductPrice"/>
+        <result column="discount_price" property="discountPrice"/>
+        <result column="total_product_price" property="totalProductPrice"/>
+        <result column="postage_price" property="postagePrice"/>
+        <result column="product_num" property="productNum"/>
+        <result column="pay_time" property="payTime"/>
+        <result column="is_send" property="isSend"/>
+        <result column="create_date" property="createDate"/>
+        <collection property="orderDetailsList" ofType="cn.sparke.order.modules.v1.order.entity.OrderDetailsEntity">
+            <id column="odId" property="id"/>
+            <result column="odProductId" property="productId"/>
+            <result column="odNum" property="num"/>
+            <result column="odProductType" property="productType"/>
+            <result column="odProductName" property="productName"/>
+            <result column="odProductPrice" property="productPrice"/>
+            <result column="odRefundStatus" property="refundStatus"/>
+            <result column="odIsComment" property="isComment"/>
+        </collection>
+    </resultMap>
+    <select id="getOrderAndDetails" resultMap="getOrderAndDetailsByIdMap">
+        SELECT
+        o.id,
+        o.type,
+        o.user_id,
+        o.order_status,
+        o.order_code,
+        o.pay_type,
+        o.order_price,
+        o.total_product_price,
+        o.discount_price,
+        o.postage_price,
+        o.product_num,
+        o.pay_time,
+        o.is_send,
+        o.create_date,
+        od.id AS odId,
+        od.product_id AS odProductId,
+        od.num AS odNum,
+        od.product_type AS odProductType,
+        od.product_name AS odProductName,
+        od.product_price AS odProductPrice,
+        od.refund_status AS odRefundStatus,
+        od.is_comment AS odIsComment
+        FROM tb_order o
+        INNER JOIN tb_order_details od
+        ON o.id = od.order_id
+        WHERE o.is_admin_del = 0
+        AND o.is_user_del = 0
+        <if test="orderCode!=null">
+            AND o.order_code = #{orderCode}
+        </if>
+        <if test="orderTradeNo!=null">
+            AND o.order_trade_no = #{orderTradeNo}
+        </if>
+        <if test="id!=null">
+            AND o.id = #{id}
+        </if>
+    </select>
+    <!--批量更新产品数量-->
+    <update id="updateProductNum">
+        <foreach close="" collection="list" index="index" item="item" open="" separator=";">
+            UPDATE tb_product
+            SET sale_num = sale_num + #{item.num}
+            WHERE id = #{item.productId}
+        </foreach>
+    </update>
+    <!--根据产品id获取网课列表-->
+    <select id="findNetworkIdList" resultType="string">
+        SELECT id
+        FROM tb_product_network_course
+        WHERE product_id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="update">
+        UPDATE tb_order
+        SET order_status   = #{orderStatus},
+            pay_time       = #{payTime},
+            pay_type       = #{payType},
+            trade_no       = #{tradeNo},
+            pay_price      = #{payPrice},
+            order_trade_no = #{orderTradeNo},
+            update_date    = #{updateDate}
+        WHERE id = #{id}
+    </update>
+    <select id="orderStatus" resultType="cn.sparke.order.modules.v1.order.entity.OrderEntity">
+        SELECT
+            id,
+            order_status
+        FROM tb_order
+        WHERE id = #{id}
+    </select>
+</mapper>

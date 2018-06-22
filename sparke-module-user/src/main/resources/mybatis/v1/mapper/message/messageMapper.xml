@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.message.mapper.MessageMapper">
+    <!--消息列表-->
+    <select id="findList" resultType="cn.sparke.user.modules.v1.message.bean.MessageBean">
+        SELECT
+            m.id,
+            m.title,
+            m.img,
+            m.intro,
+            m.url,
+            m.jump_type,
+            m.content_id,
+            ifnull((SELECT 1
+                    FROM tb_message_user_operate uo
+                    WHERE uo.msg_id = m.id AND uo.type = 1 AND user_id = #{userId}
+                    LIMIT 1), 0) AS isRead,
+            m.create_date        AS createDate
+        FROM tb_message m
+        WHERE m.del_flag = 0
+              AND push_status = 1
+              AND NOT exists(#判断是否存在删除
+                SELECT 1
+                FROM tb_message_user_operate
+                WHERE msg_id = m.id AND type = 2 AND user_id = #{userId}
+        )
+              AND (
+                  (m.target_type = 1
+                   AND exists(SELECT 1
+                              FROM tb_message_user
+                              WHERE msg_id = m.id AND user_id = #{userId})
+                  )
+                  OR m.target_type = 2
+              )
+        ORDER BY m.create_date DESC
+    </select>
+
+    <!--获取详情-->
+    <select id="getById" resultType="cn.sparke.user.modules.v1.message.bean.MessageBean">
+        SELECT
+            m.id,
+            m.title,
+            m.img,
+            m.intro,
+            m.content,
+            m.jump_type,
+            m.content_id,
+            m.create_date AS createDate
+        FROM tb_message m
+        WHERE m.del_flag = 0
+              AND m.id = #{id}
+    </select>
+    <!--插入用户操作表-->
+    <insert id="insertUserOperate">
+        INSERT INTO tb_message_user_operate (id, user_id, msg_id, type, create_date) VALUES (
+            #{id},
+            #{userId},
+            #{msgId},
+            #{type},
+            #{createDate}
+        )
+    </insert>
+    <!--更新用户操作表-->
+    <insert id="updateUserOperate">
+        UPDATE tb_message_user_operate
+        SET type = #{type}
+        WHERE id = #{id}
+    </insert>
+    <!--判断是否存在用户操作-->
+    <select id="existUserOperate" resultType="cn.sparke.user.modules.v1.message.bean.MessageUserOperateBean">
+        SELECT
+            id,
+            type
+        FROM tb_message_user_operate
+        WHERE user_id = #{userId}
+              AND msg_id = #{id}
+        LIMIT 1
+    </select>
+    <!--是否存在未读消息-->
+    <select id="existUnReadMsg" resultType="string">
+        SELECT id
+        FROM tb_message m
+        WHERE del_flag = 0
+              AND push_status = 1
+              AND NOT exists(#判断是否存在操作
+                SELECT 1
+                FROM tb_message_user_operate
+                WHERE msg_id = m.id AND user_id = #{userId}
+        )
+              AND (
+                  (m.target_type = 1
+                   AND exists(SELECT 1
+                              FROM tb_message_user
+                              WHERE msg_id = m.id AND user_id = #{userId})
+                  )
+                  OR m.target_type = 2
+              )
+        LIMIT 1
+    </select>
+</mapper>

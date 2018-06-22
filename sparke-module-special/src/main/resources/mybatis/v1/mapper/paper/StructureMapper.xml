@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.special.modules.v1.paper.mapper.StructureMapper">
+    <select id="findList" resultMap="structureMap">
+      SELECT
+        structure.id,
+        structure.name,
+        #{userId} AS userId,
+        #{contentType} AS contentType
+        from tb_paper_structure structure
+        where structure.del_flag = 0 and structure.paper_id = #{paperId}
+        order by structure.sort
+    </select>
+    <resultMap id="structureMap" type="cn.sparke.special.modules.v1.paper.bean.PaperBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <association property="total" column="{structureId=id,contentType=contentType}"
+                     javaType="int" select="getTotal"/>
+        <association property="didNum" column="{structureId=id,userId=userId,contentType=contentType}"
+                     javaType="int" select="getDidNum"/>
+    </resultMap>
+    <select id="getTotal" resultType="int">
+        <choose>
+            <when test="contentType == 1 or contentType == 2">
+                SELECT ifnull(sum(q.question_num),0)
+                FROM  tb_paper_question pq
+                INNER JOIN tb_question q ON pq.question_id = q.id
+                where pq.structure_id = #{structureId}
+                and pq.del_flag = 0
+                and q.del_flag = 0
+            </when>
+            <when test="contentType == 3 or contentType == 4">
+                SELECT count(1)
+                FROM  tb_paper_question pq
+                INNER JOIN tb_question q ON pq.question_id = q.id
+                where pq.structure_id = #{structureId}
+                and pq.del_flag = 0
+                and q.del_flag = 0
+            </when>
+            <otherwise>
+                SELECT 0
+            </otherwise>
+        </choose>
+
+
+    </select>
+    <select id="getDidNum" resultType="int">
+        <choose>
+            <when test="contentType==1 or contentType == 2">
+                SELECT ifnull(SUM(total_num),0)
+                FROM tb_question_report
+                WHERE  user_id = #{userId} AND paper_structure_id = #{structureId} AND catalog_type = 1 AND del_flag = 0
+            </when>
+            <when test="contentType==3 or contentType == 4">
+                SELECT count(1) FROM tb_question_record WHERE  structure_id = #{structureId} AND user_id = #{userId} AND type = 1
+            </when>
+            <otherwise>
+                SELECT 0;
+            </otherwise>
+        </choose>
+    </select>
+
+
+    <select id="getStructure" resultType="cn.sparke.special.modules.v1.paper.bean.StructureBean">
+        SELECT * FROM tb_paper_structure WHERE id = #{structureId}
+    </select>
+
+
+</mapper>

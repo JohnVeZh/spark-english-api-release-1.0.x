@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.gift.modules.v1.exercise.mapper.GiftExerciseMapper">
+    <select id="findList" resultMap="exerciseMap">
+        SELECT
+            exercise.id,
+            exercise.paper_id,
+            exercise.structure_id,
+            structure.name as structureName,
+            exercise.question_type as contentType,
+            #{userId} AS userId
+        FROM tb_gift_exercise exercise
+        INNER JOIN tb_paper_structure structure
+                ON exercise.structure_id = structure.id
+        WHERE section_code = #{sectionCode}
+              and exercise.del_flag = 0
+              and structure.del_flag = 0
+              and exercise.publish_time &lt;= now()
+        ORDER BY exercise.sort
+    </select>
+    <select id="findQuestionList" resultType="cn.sparke.gift.modules.v1.exercise.bean.QuestionBean">
+        SELECT
+            tb_question.id,
+            tb_question.name,
+            tb_question.type,
+            (SELECT ifnull(max(is_finish), 0)
+               FROM tb_question_record record INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+               WHERE record.user_id = #{userId}
+                     AND record.question_id = tb_question.id
+                     AND record.type = 3
+                     AND record.del_flag = 0) AS isFinish ,
+            tb_question.question_num
+            FROM tb_question INNER JOIN tb_paper_question
+                ON tb_question.id = tb_paper_question.question_id
+                WHERE tb_paper_question.structure_id = #{structureId}
+                      AND  tb_question.del_flag = 0
+                      AND tb_paper_question.del_flag = 0
+    </select>
+    <resultMap id="exerciseMap" type="cn.sparke.gift.modules.v1.exercise.bean.GiftExerciseBean">
+        <id property="id" column="id"/>
+        <result property="paperId" column="paper_id" />
+        <result property="structureId" column="structure_id"/>
+        <result property="structureName" column="structureName"/>
+        <result property="contentType" column="contentType"/>
+        <collection property="questionList" ofType="cn.sparke.gift.modules.v1.exercise.bean.QuestionBean" autoMapping="true" select="findQuestionList" column="{structureId = structure_id ,userId = userId}" >
+            <id property="id" column="id"/>
+            <result property="name" column="name"/>
+            <result property="type" column="type"/>
+            <result property="is_finish" column="isFinish"/>
+            <result property="questionNum" column="question_num"/>
+        </collection>
+    </resultMap>
+
+
+
+    <select id="getQuestion" resultMap="questionMap">
+        SELECT
+        question.id,
+        question.`name`,
+        pQuestion.structure_id,
+        question.content,
+        question.type,
+        question.has_item,
+        question.question_num,
+        question.analysis,
+        listening.audio_url,
+        listening.tapescripts,
+        if(type = 1, listening.translation, IF(type = 2, reading.translation, NULL)) AS translation,
+        if(type = 3, translations.reference, IF(type = 4, writing.reference, NULL))  AS reference,
+        item.id AS itemId,
+        item.content AS itemContent,
+        item.analysis  AS itemAnalysis,
+        options.id AS optionId,
+        options.is_answer AS optionIsAnswer,
+        options.name AS optionName,
+        options.content AS optionContent,
+        #{userId} AS userId
+        FROM tb_question question
+        INNER JOIN tb_paper_question pQuestion
+        ON question.id = pQuestion.question_id AND pQuestion.del_flag = 0 AND question.type = #{type}
+        LEFT JOIN tb_question_listening listening ON question.id = listening.question_id AND type = 1
+        LEFT JOIN tb_question_reading reading ON question.id = reading.question_id AND type = 2
+        LEFT JOIN tb_question_translation translations ON question.id = translations.question_id AND type = 3
+        LEFT JOIN tb_question_writing writing ON question.id = writing.question_id AND type = 4
+        LEFT JOIN tb_question_item item
+        ON item.question_id = question.id AND item.del_flag = 0 AND question.has_item = 1
+        LEFT JOIN tb_question_option options ON item.id = options.item_id AND options.del_flag = 0
+        WHERE question.id = #{questionId}
+        ORDER BY pQuestion.sort, item.sort, options.sort
+    </select>
+    <select id="getIsFinish" resultType="int">
+        SELECT ifnull(max(record.is_finish), 0)
+        FROM tb_question_record record INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+        WHERE record.user_id = #{userId}
+              AND record.question_id = #{questionId}
+              AND record.type = 3
+              AND record.del_flag = 0
+    </select>
+    <select id="getUserRecordOptionId" resultType="java.lang.String">
+        SELECT detail.user_option_id
+        FROM tb_question_record_detail detail
+        WHERE detail.user_id = #{userId} AND detail.question_item_id = #{itemId} AND detail.del_flag = 0
+        ORDER BY detail.create_date
+        LIMIT 1
+    </select>
+    <select id="getUserRecordDifficultyLevel" resultType="int">
+        SELECT record.difficulty_level
+        FROM tb_question_record record INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+        WHERE record.user_id = #{userId}
+              AND record.question_id = #{questionId}
+              AND record.type = 3
+              AND record.question_type > 2
+              AND record.del_flag = 0
+    </select>
+    <resultMap id="questionMap" type="cn.sparke.gift.modules.v1.exercise.bean.QuestionBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="structureId" column="structure_id"/>
+        <result property="content" column="content"/>
+        <result property="type" column="type"/>
+        <result property="hasItem" column="has_item"/>
+        <result property="questionNum" column="question_num"/>
+        <result property="analysis" column="analysis"/>
+        <result property="audioUrl" column="audio_url"/>
+        <result property="tapescripts" column="tapescripts"/>
+        <result property="translation" column="translation"/>
+        <result property="reference" column="reference"/>
+        <association property="recordInfo" javaType="cn.sparke.gift.modules.v1.exercise.bean.QuestionRecordBean" column="{userId=userId,questionId=id}" select="getRecordInfo">
+            <id property="id" column="id"/>
+            <result property="isFinish" column="isFinish" jdbcType="int"/>
+            <result property="difficultyLevel" column="difficulty_level" jdbcType="int"/>
+            <result property="useTime" column="use_time" jdbcType="int"/>
+        </association>
+        <collection property="questionItemList" ofType="cn.sparke.gift.modules.v1.exercise.bean.QuestionItemBean">
+            <id property="id" column="itemId"/>
+            <result property="content" column="itemContent"/>
+            <result property="analysis" column="itemAnalysis"/>
+            <association property="userOptionId" column="{userId=userId,itemId=itemId}"
+                         javaType="string" select="getUserRecordOptionId"/>
+            <collection property="optionList" ofType="cn.sparke.gift.modules.v1.exercise.bean.QuestionOptionBean">
+                <id property="id" column="optionId"/>
+                <result property="isAnswer" column="optionIsAnswer"/>
+                <result property="name" column="optionName"/>
+                <result property="content" column="optionContent"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="getRecordInfo" resultType="cn.sparke.gift.modules.v1.exercise.bean.QuestionRecordBean">
+        SELECT record.id,ifnull(max(record.is_finish), 0) AS isFinish,record.difficulty_level,ifnull(record.use_time,0) AS use_time
+        FROM tb_question_record record INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+        WHERE record.user_id = #{userId} AND record.question_id = #{questionId} AND record.type = 3 AND record.del_flag = 0
+    </select>
+
+    <select id="getReport" resultMap="reportMap" >
+        SELECT
+        report.id,
+        report.paper_id,
+        report.paper_structure_id,
+        report.use_time,
+        report.total_num,
+        report.did_num,
+        report.not_done_num,
+        report.right_num,
+        report.wrong_num,
+        report.right_rate,
+        report.create_date,
+        record.question_id,
+        detail.question_item_id,
+        detail.status,
+        detail.user_option_id,
+        detail.right_option_id,
+        #{userId} AS userId,
+        #{sectionCode} AS sectionCode
+        FROM tb_question_report report
+        INNER JOIN tb_question_report_record rr ON  report.id = rr.report_id AND report.del_flag = 0 AND report.catalog_type = 3
+        <if test="type == 1">
+            AND report.id = #{contentId}
+        </if>
+        <if test="type == 2">
+            AND report.question_id = #{contentId} AND report.user_id = #{userId}
+        </if>
+        INNER JOIN tb_question_record record ON rr.record_id = record.id  AND record.type = 3 AND record.del_flag = 0
+        INNER JOIN tb_question_record_detail detail ON detail.question_record_id = record.id AND detail.del_flag = 0
+        ORDER BY detail.sort
+    </select>
+
+
+    <resultMap id="reportMap" type="cn.sparke.gift.modules.v1.exercise.bean.QuestionReportBean">
+    <id property="id" column="id" />
+    <result property="paperId" column="paper_id" />
+    <result property="paperStructureId" column="paper_structure_id" />
+    <result property="useTime" column="use_time" />
+    <result property="totalNum" column="total_num" />
+    <result property="didNum" column="did_num" />
+    <result property="notDoneNum" column="not_done_num" />
+    <result property="rightNum" column="right_num" />
+    <result property="wrongNum" column="wrong_num" />
+    <result property="rightRate" column="right_rate" />
+    <result property="createDate" column="create_date" />
+    <association property="question" javaType="cn.sparke.gift.modules.v1.exercise.bean.QuestionBean">
+        <id property="id" column="question_id"/>
+        <collection property="questionItemList" ofType="cn.sparke.gift.modules.v1.exercise.bean.QuestionItemBean">
+            <id property="id" column="question_item_id"/>
+            <result property="status" column="status"/>
+            <result property="userOptionId" column="user_option_id"/>
+            <result property="rightOptionId" column="right_option_id"/>
+        </collection>
+    </association>
+    </resultMap>
+
+
+    <delete id="deleteRecordAndDetail" >
+        DELETE record,detail FROM tb_question_record record LEFT JOIN tb_question_record_detail detail ON record.id = detail.question_record_id
+        WHERE record.user_id = #{userId} AND record.question_id = #{questionId} AND record.structure_id = #{structureId} AND record.type = 3
+    </delete>
+
+    <insert id="insertRecord">
+        INSERT INTO tb_question_record
+        (
+            id,
+            user_id,
+            paper_id,
+            section_code,
+            question_type,
+            structure_id,
+            question_num,
+            use_time,
+            type,
+            question_id,
+            is_finish,
+            difficulty_level,
+            create_date,
+            update_date,
+            sort
+        )
+        VALUES(
+            #{id},
+            #{userId},
+            #{paperId},
+            #{sectionCode},
+            #{questionType},
+            #{structureId},
+            #{questionNum},
+            #{useTime},
+            #{type},
+            #{questionId},
+            #{isFinish},
+            #{difficultyLevel},
+            #{createDate},
+            #{updateDate},
+            #{sort}
+        )
+    </insert>
+
+
+    <insert id="insertRecordDetailList">
+    INSERT INTO tb_question_record_detail
+    (
+    id,
+    user_id,
+    question_id,
+    question_record_id,
+    question_item_id,
+    status,
+    user_option_id,
+    right_option_id,
+    create_date,
+    update_date,
+    sort
+    )
+    VALUES
+    <foreach collection="detailList" item="list" separator=",">
+        (
+        #{list.id},
+        #{list.userId},
+        #{list.questionId},
+        #{list.questionRecordId},
+        #{list.questionItemId},
+        #{list.status},
+        #{list.userOptionId},
+        #{list.rightOptionId},
+        #{list.createDate},
+        #{list.updateDate},
+        #{list.sort}
+        )
+    </foreach>
+    </insert>
+    <select id="getStructure" resultType="cn.sparke.gift.modules.v1.exercise.bean.StructureBean">
+        SELECT * FROM tb_paper_structure WHERE id = #{structureId}
+    </select>
+    <select id="getAnswerOption" resultType="cn.sparke.gift.modules.v1.exercise.bean.QuestionOptionBean">
+        SELECT options.id,options.item_id,options.name,options.content,options.is_answer FROM tb_question_option options
+            INNER JOIN tb_question_item item ON item.id = options.item_id
+        WHERE options.del_flag = 0
+              AND item.del_flag = 0
+              AND item.question_id =#{questionId}
+              AND options.is_answer = 1
+    </select>
+
+    <insert id="insertReportRecord">
+        INSERT INTO tb_question_report_record
+        (
+        id,
+        report_id,
+        record_id,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES
+        (
+        #{id},
+        #{reportId},
+        #{recordId},
+        #{createDate},
+        #{updateDate},
+        #{sort}
+        )
+    </insert>
+    <delete id="deleteReportAndReportRecord">
+        DELETE report,record
+        FROM tb_question_report report
+            LEFT JOIN tb_question_report_record record
+                ON report.id  = record.report_id
+        WHERE report.user_id=#{userId}
+              AND report.section_code = #{sectionCode}
+              AND report.question_id = #{questionId}
+              AND report.catalog_type = 3
+              AND report.paper_structure_id = #{paperStructureId}
+    </delete>
+    <insert id="insertReport">
+        INSERT INTO tb_question_report
+        (
+        id,
+        user_id,
+        paper_id,
+        paper_structure_id,
+        paper_structure_alias,
+        question_id,
+        type,
+        catalog_type,
+        section_code,
+        use_time,
+        total_num,
+        did_num,
+        not_done_num,
+        right_num,
+        wrong_num,
+        right_rate,
+        create_date,
+        update_date,
+        sort
+        )
+        VALUES
+        (
+        #{id},
+        #{userId},
+        #{paperId},
+        #{paperStructureId},
+        #{paperStructureAlias},
+        #{questionId},
+        #{type},
+        #{catalogType},
+        #{sectionCode},
+        #{useTime},
+        #{totalNum},
+        #{didNum},
+        #{notDoneNum},
+        #{rightNum},
+        #{wrongNum},
+        #{rightRate},
+        #{createDate},
+        #{updateDate},
+        #{sort}
+        )
+    </insert>
+
+    <select id="getExistReport" resultType="String">
+        SELECT report.id  FROM tb_question_report report
+        INNER JOIN tb_question_report_record rr ON report.id = rr.report_id  AND report.question_id = #{questionId} AND report.user_id = #{userId} AND report.catalog_type = 3 AND report.del_flag = 0
+        INNER JOIN tb_question_record record ON rr.record_id = record.id  AND record.type = 3 AND record.del_flag = 0
+        INNER JOIN tb_paper_structure structure ON record.structure_id = structure.id AND structure.del_flag = 0
+        INNER JOIN tb_question_record_detail detail ON detail.question_record_id = record.id AND detail.del_flag = 0 LIMIT 1
+    </select>
+
+    <delete id="deleteReport">
+        DELETE report,rr
+        FROM tb_question_report report
+            LEFT JOIN tb_question_report_record rr
+                ON report.id = rr.report_id
+        WHERE user_id=#{userId}
+              AND section_code = #{sectionCode}
+              AND question_id = #{questionId}
+              AND catalog_type = 3
+    </delete>
+
+</mapper>

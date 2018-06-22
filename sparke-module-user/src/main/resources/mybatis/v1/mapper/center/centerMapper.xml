@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.sparke.user.modules.v1.center.mapper.CenterMapper">
+    <!--我的评论-->
+    <select id="myCommentList" resultType="cn.sparke.user.modules.v1.center.bean.MyCommentBean">
+        SELECT
+            id,
+            user_id,
+            imgs,
+            content,
+            create_date
+        FROM tb_user_comment
+        WHERE del_flag = 0
+              AND user_id = #{userId}
+              AND content_type = 3
+        ORDER BY create_date DESC
+    </select>
+
+    <!--图书订单列表-->
+    <resultMap id="orderBookListMap" type="cn.sparke.user.modules.v1.center.bean.MyOrderBean">
+        <id column="id" property="id"/>
+        <result column="order_code" property="orderCode"/>
+        <result column="order_status" property="orderStatus"/>
+        <result column="remarks" property="remarks"/>
+        <result column="order_price" property="orderPrice"/>
+        <result column="create_date" property="createDate"/>
+        <collection property="orderDetailsList" column="id" select="productBookList"/>
+    </resultMap>
+
+    <select id="orderBookList" resultMap="orderBookListMap">
+        SELECT
+        o.id,
+        o.order_code,
+        o.order_status,
+        o.remarks,
+        o.order_price,
+        o.create_date
+        FROM tb_order o
+        WHERE user_id = #{userId}
+        AND type = 2
+        AND o.is_admin_del = 0
+        AND o.is_user_del = 0
+        <if test="orderStatus!=null">
+            AND o.order_status = #{orderStatus}
+        </if>
+        ORDER BY o.create_date DESC
+    </select>
+
+    <select id="productBookList" resultType="cn.sparke.user.modules.v1.center.bean.OrderDetailBean">
+        SELECT
+            od.id,
+            od.product_id,
+            od.product_name,
+            od.product_img,
+            od.num,
+            od.refund_status,
+            od.is_comment
+        FROM tb_order_details od
+        WHERE order_id = #{id}
+              AND od.del_flag = 0
+              AND od.product_type = 2
+    </select>
+    <!-- 图书订单结束-->
+
+
+    <!--网课订单列表开始-->
+    <resultMap id="orderNetworkListMap" type="cn.sparke.user.modules.v1.center.bean.MyOrderBean">
+        <id column="id" property="id"/>
+        <result column="order_code" property="orderCode"/>
+        <result column="order_status" property="orderStatus"/>
+        <result column="remarks" property="remarks"/>
+        <result column="order_price" property="orderPrice"/>
+        <result column="create_date" property="createDate"/>
+        <collection property="orderDetailsList" column="id" select="productNetworkList"/>
+    </resultMap>
+
+    <select id="orderNetworkList" resultMap="orderNetworkListMap">
+        SELECT
+        o.id,
+        o.order_code,
+        o.order_status,
+        o.remarks,
+        o.order_price,
+        o.create_date
+        FROM tb_order o
+        WHERE user_id = #{userId}
+        AND type = 1
+        AND o.is_admin_del = 0
+        AND o.is_user_del = 0
+        <if test="orderStatus!=null">
+            AND o.order_status = #{orderStatus}
+        </if>
+        ORDER BY o.create_date DESC
+    </select>
+
+    <select id="productNetworkList" resultType="cn.sparke.user.modules.v1.center.bean.OrderDetailNetworkBean">
+        SELECT
+            od.id,
+            od.product_id,
+            od.product_name,
+            od.product_img,
+            od.num,
+            od.refund_status,
+            nc.id AS networkId,
+            nc.is_live,
+            nc.status,
+            nc.start_time,
+            nc.sale_start_time,
+            nc.sale_end_time,
+            nc.end_time,
+            nc.limit_number,
+            nc.catalog_number
+        FROM tb_order_details od
+            INNER JOIN tb_product_network_course nc
+                ON od.product_id = nc.product_id
+        WHERE od.order_id = #{id}
+              AND od.del_flag = 0
+              AND od.product_type = 1
+    </select>
+    <!--网课订单列表结束 -->
+    <!--我的网课列表-->
+    <select id="myNetworkList" resultType="cn.sparke.user.modules.v1.center.bean.MyNetworkCourseBean">
+        SELECT
+        tpnc.id AS id,
+        tp.id AS productId,
+        tp.name,
+        tpnc.course_type AS courseType,
+        tp.list_img AS listImg,
+        tp.original_price AS originalPrice,
+        tp.present_price AS presentPrice,
+        tp.is_promotion AS isPromotion,
+        tpnc.catalog_number AS catalogNumber,
+        tpnc.teacher_names AS teacherNames,
+        tpnc.is_live AS isLive,
+        tpnc.is_free AS isFree,
+        tpnc.status,
+        tpnc.start_time AS startTime,
+        tpnc.end_time AS endTime,
+        tpnc.shelf_on_time AS shelfOnTime,
+        tpnc.shelf_off_time AS shelfOffTime,
+        tpnc.preview_cc_id AS previewCcId,
+        tpnc.live_room_id AS liveRoomId,
+        tunc.`type` AS obtainType,
+        (
+        SELECT start_time
+        FROM tb_product_network_course_video
+        WHERE network_course_id = tpnc.id AND start_time &gt; now() AND del_flag = 0
+        ORDER BY start_time ASC
+        LIMIT 1
+        ) AS recentOpenTime,
+        (
+        SELECT COUNT(1) FROM tb_product_network_course_video
+        WHERE network_course_id = tpnc.id AND `type` = 1 AND del_flag = 0
+        AND start_time &lt; now()
+        ) as openedNumber,
+        (
+        SELECT COUNT(1) FROM tb_product_network_course_video
+        WHERE network_course_id = tpnc.id AND `type` = 2 AND del_flag = 0
+        AND start_time &gt; now()
+        ) as notOpenNumber,
+        tunc.status AS obtainStatus
+
+        FROM
+        tb_user_network_course AS tunc
+        INNER JOIN tb_product_network_course AS tpnc ON tpnc.id = tunc.network_course_id
+        INNER JOIN tb_product AS tp ON tp.id = tpnc.product_id
+        WHERE
+        tunc.user_id = #{userId} AND
+        tunc.del_flag = 0 AND
+        tunc.`type` IN (2, 3, 4, 5) AND
+        tunc.status = 1 AND
+        tpnc.status != 0 AND
+        <if test="courseType!=null">
+            tpnc.course_type = #{courseType} AND
+        </if>
+        tp.`type` = 1 AND
+        tp.is_show = 1
+        ORDER BY tunc.create_date DESC
+    </select>
+    <!--我的预约网课列表-->
+    <select id="myReservedCoursesList" resultType="cn.sparke.user.modules.v1.center.bean.MyNetworkCourseBean">
+        SELECT
+            tpnc.id,
+            tp.id                   AS productId,
+            tp.name,
+            tpnc.course_type        AS courseType,
+            tp.list_img             AS listImg,
+            tp.original_price       AS originalPrice,
+            tp.present_price        AS presentPrice,
+            tp.is_promotion         AS isPromotion,
+            tpnc.catalog_number     AS catalogNumber,
+            tpnc.teacher_names      AS teacherNames,
+            tpnc.is_live            AS isLive,
+            tpnc.is_free            AS isFree,
+            tpnc.status,
+            tpnc.start_time         AS startTime,
+            tpnc.end_time           AS endTime,
+            tpnc.reserve_start_time AS reserveStartTime,
+            tpnc.reserve_number     AS reserveNumber,
+            tpnc.sale_start_time    AS saleStartTime,
+            tpnc.sale_end_time      AS saleEndTime,
+            tpnc.shelf_on_time      AS shelfOnTime,
+            tpnc.shelf_off_time     AS shelfOffTime,
+            tpnc.preview_cc_id      AS previewCcId,
+            tunc.`type`             AS obtainType,
+            (
+                SELECT start_time
+                FROM tb_product_network_course_video
+                WHERE network_course_id = tpnc.id AND start_time &gt; now() AND del_flag = 0
+                ORDER BY start_time ASC
+                LIMIT 1
+            )                       AS recentOpenTime,
+            (
+                SELECT COUNT(1)
+                FROM tb_product_network_course_video
+                WHERE network_course_id = tpnc.id AND `type` = 1 AND del_flag = 0
+                      AND start_time &lt; now()
+            )                       AS openedNumber,
+            (
+                SELECT COUNT(1)
+                FROM tb_product_network_course_video
+                WHERE network_course_id = tpnc.id AND `type` = 2 AND del_flag = 0
+                      AND start_time &gt; now()
+            )                       AS notOpenNumber,
+            tunc.status             AS obtainStatus
+        FROM
+            tb_user_network_course AS tunc
+            INNER JOIN tb_product_network_course AS tpnc ON tpnc.id = tunc.network_course_id
+            INNER JOIN tb_product AS tp ON tp.id = tpnc.product_id
+        WHERE
+            tunc.user_id = #{userId} AND
+            tunc.status = 1 AND
+            tunc.del_flag = 0 AND
+            tunc.`type` = 1 AND
+            tpnc.status != 0 AND
+            tp.`type` = 1 AND
+            tp.is_show = 1
+        ORDER BY tunc.create_date DESC
+    </select>
+
+    <!--我的网课详情-视频列表-->
+    <select id="getMyNetworkCourseVideosList"
+            resultType="cn.sparke.user.modules.v1.center.bean.MyNetworkCourseVideoBean">
+        SELECT
+        tpncv.id,
+        tpncv.name,
+        tpncv.`type`,
+        tpncv.cover_img AS coverImg,
+        tpncv.start_time AS startTime,
+        tpncv.duration,
+        tpncv.`size`,
+        tpnct.name AS teacherName,
+        tpncv.preview_cc_id AS previewCcId,
+        tpncv.video_cc_id AS videoCcId,
+        tpncv.live_cc_id AS liveCcId,
+        tpncv.live_room_id AS liveRoomId
+        FROM tb_product_network_course_video AS tpncv
+        LEFT JOIN tb_product_network_course_teacher AS tpnct ON tpnct.id = tpncv.teacher_id
+        WHERE
+        tpncv.network_course_id = #{courseId} AND
+        <if test="userId != null and isHide != null and isHide == 1">
+            tpncv.id NOT IN (SELECT tpncvp.network_video_id FROM tb_product_network_course_video_playlog AS tpncvp WHERE
+            tpncvp.user_id = #{userId} and tpncvp.network_video_id = tpncv.id) AND
+        </if>
+        tpncv.del_flag = 0
+        ORDER BY tpncv.sort ASC, tpncv.create_date DESC
+    </select>
+
+    <!--我的优惠券-->
+    <select id="myCouponList" resultType="cn.sparke.user.modules.v1.center.bean.MyCouponBean">
+        SELECT
+        id,
+        title,
+        effect_date,
+        invalid_date,
+        min_money,
+        discount_money,
+        create_date,
+        status
+        FROM tb_coupon
+        WHERE del_flag = 0
+        AND user_id = #{userId}
+        <if test="status == 1">
+            AND status = 1
+            AND now() &gt;=  effect_date and now() &lt;= invalid_date
+        </if>
+
+        <if test="status == 2">
+            AND status != 1
+            OR now() &lt; effect_date AND now() &gt; invalid_date
+        </if>
+    </select>
+
+    <!--更新用户-->
+    <update id="updateUser">
+        UPDATE tb_user
+        SET
+        <if test="qqOpenId!=null">
+            qq_open_id = #{qqOpenId},
+        </if>
+        <if test="weixinOpenId!=null">
+            weixin_open_id = #{weixinOpenId},
+        </if>
+        <if test="weiboOpenId!=null">
+            weibo_open_id = #{weiboOpenId},
+        </if>
+        <if test="headerImg!=null">
+            header_img = #{headerImg},
+        </if>
+        <if test="nickname!=null">
+            nickname = #{nickname},
+        </if>
+        <if test="sex!=null">
+            sex = #{sex},
+        </if>
+        <if test="realName!=null">
+            real_name = #{realName},
+        </if>
+        <if test="schoolName!=null">
+            school_name = #{schoolName},
+        </if>
+        <if test="enrollYear!=null">
+            enroll_year = #{enrollYear},
+        </if>
+        <if test="birthday!=null">
+            birthday = #{birthday},
+        </if>
+        <if test="sectionCode!=null">
+            section_code = #{sectionCode},
+        </if>
+        <if test="isAutoRemove!=null">
+            is_auto_remove = #{isAutoRemove},
+        </if>
+        <if test="isPush!=null">
+            is_push = #{isPush},
+        </if>
+        update_date = #{updateDate}
+        WHERE id = #{id}
+    </update>
+    <!--用户详情-->
+    <select id="userInfo" resultType="cn.sparke.user.modules.v1.center.bean.UserInfo">
+        SELECT
+            id,
+            phone,
+            qq_open_id,
+            weixin_open_id,
+            weibo_open_id,
+            header_img,
+            nickname,
+            sex,
+            real_name,
+            school_name,
+            enroll_year,
+            birthday,
+            section_code,
+            is_push,
+            is_auto_remove
+        FROM tb_user
+        WHERE del_flag = 0
+              AND id = #{id}
+        LIMIT 1
+    </select>
+
+    <!--网课退款订单列表开始-->
+    <resultMap id="orderNetworkListByRefundMap" type="cn.sparke.user.modules.v1.center.bean.MyOrderBean">
+        <id column="id" property="id"/>
+        <result column="order_code" property="orderCode"/>
+        <result column="order_status" property="orderStatus"/>
+        <result column="remarks" property="remarks"/>
+        <result column="order_price" property="orderPrice"/>
+        <result column="create_date" property="createDate"/>
+        <collection property="orderDetailsList" ofType="cn.sparke.user.modules.v1.center.bean.OrderDetailNetworkBean">
+            <id column="odId" property="id"/>
+            <result column="odProductId" property="productId"/>
+            <result column="odProductName" property="productName"/>
+            <result column="odProductImg" property="productImg"/>
+            <result column="odNum" property="num"/>
+            <result column="odRefundStatus" property="refundStatus"/>
+            <result column="ncId" property="networkId"/>
+            <result column="ncIsLive" property="isLive"/>
+            <result column="ncStatus" property="status"/>
+            <result column="ncStartTime" property="startTime"/>
+            <result column="ncEndTime" property="endTime"/>
+            <result column="ncCatalogNumber" property="catalogNumber"/>
+        </collection>
+    </resultMap>
+    <!--获取退款状态下的网课订单-->
+    <select id="orderNetworkListByRefund" resultMap="orderNetworkListByRefundMap">
+        SELECT
+            o.id,
+            o.order_code,
+            o.order_status,
+            o.remarks,
+            o.order_price,
+            o.create_date,
+            od.id             AS odId,
+            od.product_id     AS odProductId,
+            od.product_name   AS odProductName,
+            od.product_img    AS odProductImg,
+            od.num            AS odNum,
+            od.refund_status  AS odRefundStatus,
+            nc.id             AS ncId,
+            nc.is_live        AS ncIsLive,
+            nc.status         AS ncStatus,
+            nc.start_time     AS ncStartTime,
+            nc.end_time       AS ncEndTime,
+            nc.catalog_number AS ncCatalogNumber
+        FROM tb_order o
+            INNER JOIN tb_order_details od
+                ON o.id = od.order_id AND od.product_type = 1
+            LEFT JOIN tb_product_network_course nc
+                ON nc.id IS NULL OR od.product_id = nc.product_id
+        WHERE
+            o.user_id = #{userId}
+            AND o.is_admin_del = 0
+            AND o.is_user_del = 0
+            AND od.refund_status != 0
+            AND od.del_flag = 0
+        ORDER BY o.create_date DESC
+    </select>
+    <select id="orderNetworkListByRefundTotal" resultType="long">
+        SELECT count(1)
+        FROM tb_order o
+        WHERE
+            o.user_id = #{userId}
+            AND o.is_user_del = 0
+            AND o.is_admin_del = 0
+            AND exists(SELECT 1
+                       FROM tb_order_details detail
+                       WHERE o.id = detail.order_id AND detail.del_flag = 0 AND detail.refund_status != 0)
+    </select>
+
+    <select id="getHotSearchList" resultType="cn.sparke.user.modules.v1.center.bean.UserHotSearchBean">
+        SELECT id, title, search_type, search_num
+        FROM tb_user_hot_search
+        WHERE
+        del_flag = 0
+        <if test="searchType != null">AND search_type = #{searchType}</if>
+        ORDER BY sort ASC, search_num DESC
+    </select>
+</mapper>
